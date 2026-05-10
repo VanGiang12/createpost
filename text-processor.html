@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IG Post Studio v3</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- Rule-Based Transcript Engine v2 — pure JS, no external library needed -->
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0c;--surface:#131317;--surface2:#1a1a20;--border:#252530;
+  --accent:#c8f135;--accent2:#7b61ff;--text:#e2e2ee;--muted:#5a5a72;
+  --danger:#ff5252;--radius:10px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;
+  min-height:100vh;padding:28px 14px 80px;display:flex;flex-direction:column;align-items:center;}
+
+header{width:100%;max-width:1380px;margin-bottom:24px;display:flex;align-items:center;gap:14px}
+.logo{background:var(--accent);color:#0a0a0c;font-family:'JetBrains Mono',monospace;
+  font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:5px 10px;border-radius:5px;}
+header h1{font-size:clamp(1.3rem,2.5vw,1.8rem);font-weight:800;letter-spacing:-.02em}
+header h1 span{color:var(--accent)}
+header p{font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+
+.master{display:grid;grid-template-columns:340px 1fr 410px;gap:16px;width:100%;max-width:1480px;align-items:start;}
+@media(max-width:1200px){.master{grid-template-columns:320px 1fr}}
+@media(max-width:760px){.master{grid-template-columns:1fr}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.card+.card{margin-top:12px}
+.ct{font-size:.6rem;font-family:'JetBrains Mono',monospace;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
+.ct span{color:var(--accent)}
+
+textarea,input[type=text],input[type=number],select{
+  background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  color:var(--text);font-family:'JetBrains Mono',monospace;
+  font-size:.76rem;line-height:1.55;padding:8px 11px;width:100%;
+  outline:none;transition:border-color .18s;}
+textarea{resize:vertical}
+textarea:focus,input:focus,select:focus{border-color:var(--accent)}
+textarea::placeholder,input::placeholder{color:var(--muted)}
+select option{background:var(--surface2)}
+label.fl{font-size:.6rem;font-family:'JetBrains Mono',monospace;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px;margin-top:9px;}
+label.fl:first-child{margin-top:0}
+
+.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.col2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.col3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+
+.btn{height:34px;border:none;border-radius:7px;font-family:'Syne',sans-serif;
+  font-size:.76rem;font-weight:700;cursor:pointer;padding:0 13px;
+  transition:transform .1s,opacity .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--accent);color:#0a0a0c}
+.btn-p:hover{opacity:.88}
+.btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.btn-d{background:#1f1010;color:var(--danger);border:1px solid #3a1515}
+.btn-d:hover{border-color:var(--danger)}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.btn-full{width:100%;justify-content:center}
+
+.stats{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.chip{background:var(--surface2);border:1px solid var(--border);border-radius:5px;
+  padding:3px 9px;font-family:'JetBrains Mono',monospace;font-size:.68rem;display:flex;align-items:center;gap:5px;}
+.chip .v{color:var(--accent);font-weight:700}
+
+.seg-scroll{max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:2px}
+.seg-item{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:8px 11px;cursor:pointer;transition:border-color .18s,background .18s;animation:fadeUp .2s ease both;}
+.seg-item:hover{border-color:#333340;background:var(--surface2)}
+.seg-item.active{border-color:var(--accent);background:rgba(200,241,53,.05)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.seg-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.seg-n{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);background:rgba(200,241,53,.1);padding:2px 5px;border-radius:3px;}
+.seg-wc{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted)}
+.seg-prev{font-family:'JetBrains Mono',monospace;font-size:.7rem;line-height:1.45;
+  color:#888;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.empty{text-align:center;padding:26px 10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.72rem;}
+
+/* Preview middle */
+.mid-panel{display:flex;flex-direction:column;gap:11px}
+.preview-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:7px}
+.preview-header h2{font-size:.83rem;font-weight:700}
+.pager{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted)}
+
+/* Batch grid */
+.batch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.batch-thumb{border-radius:5px;overflow:hidden;cursor:pointer;
+  border:2px solid transparent;transition:border-color .15s;position:relative;}
+.batch-thumb:hover{border-color:var(--accent2)}
+.batch-thumb.bt-active{border-color:var(--accent)}
+.batch-thumb img{width:100%;display:block}
+.bt-num{position:absolute;top:3px;left:3px;background:rgba(0,0,0,.8);
+  color:#fff;font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  padding:1px 4px;border-radius:3px;font-weight:700;}
+.bt-del{position:absolute;top:3px;right:3px;background:rgba(180,0,0,.85);
+  color:#fff;border:none;border-radius:3px;width:18px;height:18px;font-size:10px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s;font-weight:700;padding:0;}
+.batch-thumb:hover .bt-del{opacity:1;}
+
+/* IG Frame wrapper */
+.frame-outer{width:100%;max-width:390px;margin:0 auto;}
+.frame-ratio{position:relative;width:100%;padding-bottom:125%;}
+.frame-ratio-inner{position:absolute;inset:0;overflow:hidden;border-radius:3px;box-shadow:0 2px 20px rgba(0,0,0,.3);}
+
+/* IG Frame — the screenshot target */
+#igFrame{
+  width:100%;height:100%;background:#fff;
+  display:flex;flex-direction:column;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  overflow:hidden;position:relative;
+}
+/* Top icon bar */
+.ig-icon-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 11px 5px;flex-shrink:0;}
+.ig-icon-bar-left{display:flex;align-items:center;}
+.ig-icon-bar-right{display:flex;align-items:center;}
+/* Icon + count group */
+.ig-icon-group{display:flex;align-items:center;gap:3px;}
+.ig-icon-count{font-size:11px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;}
+/* Likes row (only shown when icon bar is at TOP) */
+.ig-likes{padding:0 11px 5px;font-weight:700;flex-shrink:0;}
+/* Body */
+.ig-body{flex:1;overflow:hidden;padding:0 11px;display:flex;align-items:flex-start;min-height:0;}
+.ig-body-text{color:#000;text-align:justify;word-break:break-word;white-space:pre-wrap;overflow:hidden;width:100%;}
+/* Hashtags */
+.ig-hashtags{padding:5px 11px 4px;word-break:break-word;white-space:pre-wrap;
+  font-size:11px;color:#00376b;line-height:1.45;flex-shrink:0;}
+/* Nav bar */
+.ig-bottom{display:flex;justify-content:space-around;align-items:center;
+  padding:5px 11px 7px;border-top:1px solid #efefef;flex-shrink:0;gap:0;}
+.ig-bottom-tab{display:flex;flex-direction:column;align-items:center;gap:1px;
+  flex:1;cursor:default;}
+#igFrame svg{display:block;}
+
+/* Settings panel */
+.settings-panel{position:sticky;top:14px;display:flex;flex-direction:column;gap:11px;
+  max-height:calc(100vh - 36px);overflow-y:auto;padding-right:8px;}
+
+/* Icon picker grid */
+.icon-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:4px}
+.icon-opt{background:var(--bg);border:1px solid var(--border);border-radius:5px;
+  padding:5px 2px;cursor:pointer;text-align:center;font-size:.95rem;
+  transition:border-color .15s,background .15s;user-select:none;position:relative;}
+.icon-opt:hover{border-color:var(--accent2)}
+.icon-opt.selected{border-color:var(--accent);background:rgba(200,241,53,.08)}
+.icon-opt span.lbl{display:block;font-size:.48rem;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.icon-opt img{width:20px;height:20px;object-fit:contain;display:block;margin:0 auto;}
+.del-ic{position:absolute;top:-4px;right:-4px;background:var(--danger);
+  color:#fff;border-radius:50%;width:13px;height:13px;font-size:8px;
+  display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1;font-weight:700;}
+.icon-opt:hover .del-ic{display:flex;}
+
+/* Icon slot rows (left/right) with count input */
+.icon-slot-row{display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:1px solid var(--border);}
+.icon-slot-row:last-child{border-bottom:none}
+.icon-slot-preview{width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);border:1px solid var(--border);border-radius:5px;flex-shrink:0;cursor:pointer;}
+.icon-slot-preview img,.icon-slot-preview svg{pointer-events:none;}
+.icon-slot-count{background:var(--bg);border:1px solid var(--border);border-radius:5px;
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:3px 6px;
+  width:72px;outline:none;flex-shrink:0;}
+.icon-slot-count:focus{border-color:var(--accent)}
+.icon-slot-count::placeholder{color:var(--muted)}
+.icon-slot-vis{width:20px;height:20px;border-radius:4px;border:1px solid var(--border);
+  background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:11px;transition:border-color .15s,background .15s;}
+.icon-slot-vis.on{border-color:var(--accent);background:rgba(200,241,53,.12);}
+.icon-slot-vis.off{opacity:.4;}
+
+/* Color swatch */
+.color-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:border-color .15s;flex-shrink:0;}
+.swatch.active{border-color:var(--accent)}
+input[type=color]{width:22px;height:22px;border:none;padding:0;background:none;cursor:pointer;border-radius:50%;overflow:hidden;}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-top:3px}
+
+/* Nav tabs editor */
+.nav-tab-row{display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:1px solid var(--border);}
+.nav-tab-row:last-child{border-bottom:none}
+.nav-tab-icon-btn{width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);border:1px solid var(--border);border-radius:4px;flex-shrink:0;cursor:pointer;}
+.nav-tab-label-inp{background:var(--bg);border:1px solid var(--border);border-radius:4px;
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:3px 6px;
+  width:100%;outline:none;}
+.nav-tab-label-inp:focus{border-color:var(--accent)}
+
+/* Preset */
+.preset-list{display:flex;flex-direction:column;gap:4px;margin-top:7px;max-height:160px;overflow-y:auto;}
+.preset-item{display:flex;align-items:center;gap:5px;padding:5px 8px;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;}
+.preset-name{flex:1;font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.p-apply{font-size:.62rem;padding:0 8px;height:22px;}
+.p-upd{font-size:.62rem;padding:0 7px;height:22px;color:var(--accent2);
+  background:#0e0e1f;border:1px solid #2a2a4a;border-radius:4px;cursor:pointer;}
+.p-upd:hover{border-color:var(--accent2);background:#16162e;}
+.p-del{font-size:.62rem;padding:0 7px;height:22px;color:var(--danger);
+  background:#1f1010;border:1px solid #3a1515;border-radius:4px;cursor:pointer;}
+
+/* Toggle switch */
+.toggle-row{display:flex;align-items:center;gap:8px;margin-top:7px}
+.toggle-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);flex:1}
+.toggle{position:relative;width:32px;height:18px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;border-radius:9px;background:var(--border);
+  cursor:pointer;transition:background .2s;}
+.toggle input:checked+.toggle-track{background:var(--accent)}
+.toggle-thumb{position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;
+  background:#fff;transition:transform .2s;pointer-events:none;}
+.toggle input:checked~.toggle-thumb{transform:translateX(14px)}
+
+/* Progress */
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:7px}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .2s}
+
+/* NLP status badge */
+.nlp-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;
+  border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.6rem;margin-top:5px;}
+.nlp-badge.loading{background:rgba(123,97,255,.12);color:var(--accent2);border:1px solid rgba(123,97,255,.3)}
+.nlp-badge.ready{background:rgba(200,241,53,.1);color:var(--accent);border:1px solid rgba(200,241,53,.3)}
+.nlp-badge.error{background:rgba(255,82,82,.1);color:var(--danger);border:1px solid rgba(255,82,82,.3)}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(14px);
+  background:rgba(20,20,30,.96);color:var(--text);border:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:8px 16px;border-radius:7px;
+  opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:9999;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:rgba(50,8,8,.96);border-color:var(--danger);color:var(--danger)}
+.toast.ok{border-color:var(--accent);color:var(--accent)}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;
+  display:flex;align-items:center;justify-content:center;padding:14px;}
+.modal-bg.hidden{display:none}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  padding:20px;max-width:360px;width:100%;}
+.modal h3{font-size:.88rem;font-weight:700;margin-bottom:13px}
+.modal-icon-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
+  max-height:240px;overflow-y:auto;margin-bottom:10px;}
+
+/* Segmented control for icon bar position */
+.seg-ctrl{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-top:5px;}
+.seg-ctrl-opt{flex:1;padding:5px 0;text-align:center;font-family:'JetBrains Mono',monospace;
+  font-size:.62rem;cursor:pointer;transition:background .15s,color .15s;color:var(--muted);}
+.seg-ctrl-opt.active{background:var(--accent);color:#0a0a0c;font-weight:700;}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg);border-radius:3px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+/* Avatar row in ig frame */
+.ig-avatar-row{display:flex;align-items:center;gap:7px;padding:6px 11px 4px;flex-shrink:0;}
+.ig-avatar-circle{border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid #dbdbdb;
+  display:flex;align-items:center;justify-content:center;background:#e0e0e0;}
+.ig-avatar-circle img{width:100%;height:100%;object-fit:cover;display:block;}
+.ig-avatar-initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:-apple-system,sans-serif;font-weight:700;color:#555;font-size:inherit;}
+.ig-avatar-name{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-weight:600;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* Avatar upload area in settings */
+.avatar-upload-box{width:52px;height:52px;border-radius:50%;border:2px dashed var(--border);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;flex-shrink:0;background:var(--bg);transition:border-color .15s;}
+.avatar-upload-box:hover{border-color:var(--accent)}
+.avatar-upload-box img{width:100%;height:100%;object-fit:cover;display:block;}
+.avatar-upload-placeholder{font-size:1.4rem;pointer-events:none;}
+
+/* Diff highlight for punctuation preview */
+.punct-diff-added{color:var(--accent);font-weight:600;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">IG v3</div>
+  <div>
+    <h1>Post <span>Studio</span></h1>
+    <p>// chia đoạn → tùy chỉnh → export PNG</p>
+  </div>
+</header>
+
+<div class="master">
+
+<!-- ══ COL 1 ══ -->
+<div>
+  <div class="card">
+    <div class="ct">// 01 — văn bản</div>
+    <textarea id="inputText" rows="7" placeholder="Dán văn bản vào đây..."></textarea>
+
+    <!-- NLP Punctuation toggle -->
+    <div class="toggle-row" style="margin-top:8px">
+      <span class="toggle-label">Văn bản <b style="color:var(--text)">không có dấu câu</b> — NLP tự thêm</span>
+      <label class="toggle">
+        <input type="checkbox" id="noPunctCheck" onchange="onNoPunctChange()"/>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+
+    <div id="addPunctRow" style="display:none;margin-top:6px">
+      <!-- NLP engine status -->
+      <div id="nlpStatus" class="nlp-badge loading">⏳ Đang tải compromise NLP...</div>
+
+      <!-- Mode selector -->
+      <label class="fl" style="margin-top:8px">Chế độ thêm dấu câu</label>
+      <select id="punctMode">
+        <option value="smart">Smart — NLP sentence detection</option>
+        <option value="conservative">Conservative — chỉ thêm dấu chấm</option>
+        <option value="full">Full — chấm + phẩy + hỏi + than</option>
+      </select>
+
+      <div class="row" style="margin-top:6px">
+        <button class="btn btn-p" style="flex:1" id="addPunctBtn" onclick="addPunctuationNLP()" disabled>✦ Thêm dấu câu (NLP)</button>
+        <button class="btn btn-s" id="previewDiffBtn" onclick="previewPunctDiff()" disabled title="Xem trước thay đổi">👁 Preview</button>
+      </div>
+      <div id="punctStatus" style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin-top:4px;display:none"></div>
+
+      <!-- Diff preview modal trigger -->
+      <div id="diffPreviewBox" style="display:none;margin-top:8px;max-height:120px;overflow-y:auto;
+        background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;
+        font-family:'JetBrains Mono',monospace;font-size:.66rem;line-height:1.6;color:var(--muted)">
+      </div>
+    </div>
+
+    <div class="row">
+      <div style="flex:1">
+        <label class="fl">N từ tối thiểu / đoạn</label>
+        <input type="number" id="nWords" value="50" min="1" max="9999"/>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn btn-p" style="flex:1" onclick="processText()">▶ Process</button>
+      <button class="btn btn-s" id="dlTxtBtn" onclick="downloadTxt()" disabled>↓ .txt</button>
+      <button class="btn btn-s" id="dlLastSentBtn" onclick="downloadLastSentences()" disabled title="Xuất câu cuối mỗi đoạn ra file txt">↓ câu cuối</button>
+      <button class="btn btn-s" id="dlFirstSentBtn" onclick="downloadFirstSentences()" disabled title="Xuất câu đầu mỗi đoạn (tất cả ảnh) ra file txt">↓ câu đầu</button>
+    </div>
+    <div class="stats" id="statsBar" style="display:none">
+      <div class="chip">Đoạn: <span class="v" id="sS">0</span></div>
+      <div class="chip">Từ: <span class="v" id="sW">0</span></div>
+      <div class="chip">TB: <span class="v" id="sA">0</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">// 02 — đoạn <span style="font-size:.54rem">(click để load)</span></div>
+    <div class="seg-scroll" id="segList">
+      <div class="empty">✦<br/>Nhập văn bản và nhấn Process</div>
+    </div>
+    <div class="row" style="margin-top:9px">
+      <button class="btn btn-s btn-full" id="addAllBtn" onclick="addAllToPreview()" disabled>
+        ＋ Thêm tất cả đoạn
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COL 2: Preview ══ -->
+<div class="mid-panel">
+  <div class="card">
+    <div class="preview-header">
+      <h2>Preview</h2>
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+        <span class="pager" id="pagerLabel">—</span>
+        <button class="btn btn-s" style="height:28px;padding:0 9px;font-size:.72rem" onclick="prevSlide()">‹</button>
+        <button class="btn btn-s" style="height:28px;padding:0 9px;font-size:.72rem" onclick="nextSlide()">›</button>
+        <button class="btn btn-s" style="height:28px;padding:0 9px;font-size:.72rem" onclick="removeCurrentSlide()" title="Xóa slide này">🗑</button>
+        <button class="btn btn-d" style="height:28px;padding:0 9px;font-size:.72rem" onclick="clearAllSlides()" title="Xóa tất cả slides">✕ Tất cả</button>
+      </div>
+    </div>
+
+    <div class="frame-outer" style="margin-top:10px">
+      <div class="frame-ratio">
+        <div class="frame-ratio-inner">
+          <div id="igFrame">
+            <!-- Avatar row -->
+            <div class="ig-avatar-row" id="igAvatarRow" style="display:none">
+              <div class="ig-avatar-circle" id="igAvatarCircle" style="width:32px;height:32px;">
+                <div class="ig-avatar-initials" id="igAvatarInitials" style="font-size:13px">?</div>
+              </div>
+              <span class="ig-avatar-name" id="igAvatarName"></span>
+            </div>
+            <!-- Top icon bar (position=top) -->
+            <div class="ig-icon-bar" id="igIconBarTop" style="display:flex">
+              <div class="ig-icon-bar-left" id="igLeftTop"></div>
+              <div class="ig-icon-bar-right" id="igRightTop"></div>
+            </div>
+            <!-- Likes row (hidden when icons at bottom) -->
+            <div class="ig-likes" id="igLikesEl" style="font-size:12px;color:#000"></div>
+            <!-- Body -->
+            <div class="ig-body"><div class="ig-body-text" id="igBodyEl">
+              <span style="color:#ccc;font-style:italic;font-size:11px">← Chọn đoạn để xem preview</span>
+            </div></div>
+            <!-- Hashtags -->
+            <div class="ig-hashtags" id="igHashEl"></div>
+            <!-- Bottom icon bar (position=bottom, hidden by default) -->
+            <div class="ig-icon-bar" id="igIconBarBottom" style="display:none;padding:5px 11px 4px;border-top:1px solid #efefef;">
+              <div class="ig-icon-bar-left" id="igLeftBottom"></div>
+              <div class="ig-icon-bar-right" id="igRightBottom"></div>
+            </div>
+            <!-- Nav bar -->
+            <div class="ig-bottom" id="igBottom"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch grid -->
+    <div id="batchSection" style="display:none;margin-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="ct" style="margin-bottom:0">// slides <span id="batchCount"></span></div>
+        <button class="btn btn-d" style="height:24px;padding:0 8px;font-size:.62rem" onclick="clearAllSlides()">🗑 Xóa tất cả</button>
+      </div>
+      <div class="batch-grid" id="batchGrid"></div>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="card">
+    <div class="ct">// 03 — xuất ảnh</div>
+    <div class="col2">
+      <button class="btn btn-p" onclick="exportCurrent()" id="dlOneBtn" disabled>↓ PNG slide này</button>
+      <button class="btn btn-s" onclick="exportAll()" id="dlAllBtn" disabled>⬇ Tất cả (ZIP)</button>
+    </div>
+    <div class="progress-bar" id="progressBar" style="display:none">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div id="progressLabel" style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin-top:4px"></div>
+  </div>
+</div>
+
+<!-- ══ COL 3: Settings ══ -->
+<div class="settings-panel">
+
+  <!-- Preset -->
+  <div class="card">
+    <div class="ct">// preset</div>
+    <div class="row" style="margin-top:0">
+      <button class="btn btn-p" style="flex:1;font-size:.72rem" onclick="openSavePreset()">💾 Lưu</button>
+      <button class="btn btn-s" style="font-size:.72rem" onclick="importPreset()">📂 Import</button>
+      <button class="btn btn-s" style="font-size:.72rem" onclick="exportPresets()">📤 Export</button>
+    </div>
+    <div class="preset-list" id="presetList"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="card">
+    <div class="ct">// 04 — nội dung</div>
+    <label class="fl">Hashtags</label>
+    <textarea id="cfgHash" rows="2" style="font-size:.7rem" oninput="applySettings()">#jokerspeech #darkmotivation #powerfulspeech
+#motivation #jokermotivationalquotes</textarea>
+  </div>
+
+  <!-- Typography -->
+  <div class="card">
+    <div class="ct">// 05 — kiểu chữ & màu</div>
+    <label class="fl">Màu nền</label>
+    <div class="color-row" id="bgSwatches">
+      <div class="swatch active" style="background:#ffffff" data-color="#ffffff" onclick="setBgColor(this)"></div>
+      <div class="swatch" style="background:#000000" data-color="#000000" onclick="setBgColor(this)"></div>
+      <div class="swatch" style="background:#1a1a2e" data-color="#1a1a2e" onclick="setBgColor(this)"></div>
+      <div class="swatch" style="background:#fdf6e3" data-color="#fdf6e3" onclick="setBgColor(this)"></div>
+      <div class="swatch" style="background:#fff4f4" data-color="#fff4f4" onclick="setBgColor(this)"></div>
+      <div class="swatch" style="background:#e8f5e9" data-color="#e8f5e9" onclick="setBgColor(this)"></div>
+      <input type="color" id="bgCustom" value="#ffffff" onchange="setBgCustom(this)"/>
+    </div>
+    <label class="fl">Màu chữ</label>
+    <div class="color-row" id="textSwatches">
+      <div class="swatch active" style="background:#000000" data-color="#000000" onclick="setTextColor(this)"></div>
+      <div class="swatch" style="background:#ffffff" data-color="#ffffff" onclick="setTextColor(this)"></div>
+      <div class="swatch" style="background:#333333" data-color="#333333" onclick="setTextColor(this)"></div>
+      <input type="color" id="textCustom" value="#000000" onchange="setTextCustom(this)"/>
+    </div>
+    <label class="fl">Màu hashtag</label>
+    <div class="color-row" id="hashSwatches">
+      <div class="swatch active" style="background:#00376b" data-color="#00376b" onclick="setHashColor(this)"></div>
+      <div class="swatch" style="background:#7b61ff" data-color="#7b61ff" onclick="setHashColor(this)"></div>
+      <div class="swatch" style="background:#0095f6" data-color="#0095f6" onclick="setHashColor(this)"></div>
+      <div class="swatch" style="background:#c8f135" data-color="#c8f135" onclick="setHashColor(this)"></div>
+      <input type="color" id="hashCustom" value="#00376b" onchange="setHashCustom(this)"/>
+    </div>
+    <label class="fl">Màu số lượt tương tác</label>
+    <div class="color-row" id="countSwatches">
+      <div class="swatch active" style="background:#000000" data-color="#000000" onclick="setCountColor(this)"></div>
+      <div class="swatch" style="background:#555555" data-color="#555555" onclick="setCountColor(this)"></div>
+      <div class="swatch" style="background:#888888" data-color="#888888" onclick="setCountColor(this)"></div>
+      <div class="swatch" style="background:#ffffff" data-color="#ffffff" onclick="setCountColor(this)"></div>
+      <input type="color" id="countCustom" value="#000000" onchange="setCountCustom(this)"/>
+    </div>
+    <label class="fl">Cỡ chữ body</label>
+    <div style="display:flex;align-items:center;gap:9px">
+      <input type="range" id="fontSizeRange" min="6" max="20" value="12" oninput="onFontSizeChange(this)"/>
+      <span id="fontSizeLabel" style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent);width:28px;flex-shrink:0">12px</span>
+    </div>
+    <label class="fl">Line-height</label>
+    <div style="display:flex;align-items:center;gap:9px">
+      <input type="range" id="lineHRange" min="1.1" max="2.2" step="0.05" value="1.55" oninput="onLineHChange(this)"/>
+      <span id="lineHLabel" style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent);width:32px;flex-shrink:0">1.55</span>
+    </div>
+    <label class="fl">Canh chữ</label>
+    <select id="textAlign" onchange="applySettings()">
+      <option value="justify">Justify</option>
+      <option value="left">Left</option>
+      <option value="center">Center</option>
+      <option value="right">Right</option>
+    </select>
+    <label class="fl">First-line indent</label>
+    <div style="display:flex;align-items:center;gap:9px">
+      <input type="range" id="indentRange" min="0" max="60" step="4" value="0" oninput="onIndentChange(this)"/>
+      <span id="indentLabel" style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent);width:28px;flex-shrink:0">0px</span>
+    </div>
+  </div>
+
+  <!-- Icon bar -->
+  <div class="card">
+    <div class="ct">// 06 — icon bar</div>
+
+    <label class="fl" style="margin-top:0">Vị trí icon bar</label>
+    <div class="seg-ctrl" id="iconBarPosSel">
+      <div class="seg-ctrl-opt active" data-val="top" onclick="setIconBarPos('top',this)">⬆ Trên</div>
+      <div class="seg-ctrl-opt" data-val="bottom" onclick="setIconBarPos('bottom',this)">⬇ Dưới</div>
+    </div>
+
+    <label class="fl" style="margin-top:10px">Màu icon</label>
+    <div class="color-row" id="iconColorSwatches">
+      <div class="swatch active" style="background:#000000" data-color="#000000" onclick="setIconColor(this)"></div>
+      <div class="swatch" style="background:#ffffff" data-color="#ffffff" onclick="setIconColor(this)"></div>
+      <div class="swatch" style="background:#888888" data-color="#888888" onclick="setIconColor(this)"></div>
+      <div class="swatch" style="background:#c8f135" data-color="#c8f135" onclick="setIconColor(this)"></div>
+      <input type="color" id="iconColorCustom" value="#000000" onchange="setIconColorCustom(this)"/>
+    </div>
+    <label class="fl">Kích thước icon</label>
+    <div style="display:flex;align-items:center;gap:9px">
+      <input type="range" id="iconSizeRange" min="12" max="30" value="18" oninput="onIconSizeChange(this)"/>
+      <span id="iconSizeLabel" style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent);width:28px;flex-shrink:0">18</span>
+    </div>
+
+    <label class="fl" style="margin-top:10px">
+      Icon trái — click icon để đổi, nhập số đếm, 👁 hiện/ẩn số
+    </label>
+    <div id="leftSlotRows"></div>
+    <div class="row" style="margin-top:5px">
+      <button class="btn btn-s" style="height:28px;font-size:.65rem;flex:1" onclick="addIconSlot('left')">＋ Thêm slot</button>
+      <button class="btn btn-s" style="height:28px;font-size:.65rem" onclick="uploadIconToSlot('left')">📁 Từ file</button>
+    </div>
+
+    <label class="fl" style="margin-top:10px">Icon phải</label>
+    <div id="rightSlotRows"></div>
+    <div class="row" style="margin-top:5px">
+      <button class="btn btn-s" style="height:28px;font-size:.65rem;flex:1" onclick="addIconSlot('right')">＋ Thêm slot</button>
+      <button class="btn btn-s" style="height:28px;font-size:.65rem" onclick="uploadIconToSlot('right')">📁 Từ file</button>
+    </div>
+
+    <!-- Likes row (only shown when iconBarPos=top) -->
+    <div id="likesRowCfg" style="margin-top:10px">
+      <label class="fl" style="margin-top:0">Dòng số lượng like (hiện khi icon ở trên)</label>
+      <input type="text" id="cfgLikes" value="31,230" oninput="applySettings()" placeholder="VD: 31,230"/>
+      <div class="toggle-row">
+        <span class="toggle-label">Hiện dòng likes</span>
+        <label class="toggle">
+          <input type="checkbox" id="showLikesRow" checked onchange="applySettings()"/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav bar -->
+  <div class="card">
+    <div class="ct">// 07 — nav bar</div>
+    
+    <label class="fl" style="margin-top:0">Vị trí Nav bar</label>
+    <div class="seg-ctrl" id="navBarPosSel">
+      <div class="seg-ctrl-opt" data-val="top" onclick="setNavBarPos('top',this)">⬆ Trên</div>
+      <div class="seg-ctrl-opt active" data-val="bottom" onclick="setNavBarPos('bottom',this)">⬇ Dưới</div>
+    </div>
+
+    <label class="fl" style="margin-top:10px">Kiểu</label>
+    
+    <select id="navStyle" onchange="applySettings()">
+      <option value="custom">Custom tabs</option>
+      <option value="minimal">Minimal (gạch ngang)</option>
+      <option value="none">Ẩn nav bar</option>
+    </select>
+    <div id="navTabsEditor" style="margin-top:9px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="ct" style="margin-bottom:0">Tabs <span id="navTabCount"></span></div>
+        <button class="btn btn-s" style="height:22px;padding:0 7px;font-size:.58rem" onclick="addNavTab()">＋</button>
+      </div>
+      <div id="navTabRows"></div>
+    </div>
+  </div>
+
+  <!-- Avatar -->
+  <div class="card">
+    <div class="ct">// 08 — avatar & tên</div>
+
+    <div class="toggle-row" style="margin-top:0">
+      <span class="toggle-label">Hiện avatar & tên</span>
+      <label class="toggle">
+        <input type="checkbox" id="showAvatar" onchange="applySettings()"/>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+
+    <div id="avatarCfg" style="display:none">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin-top:7px;line-height:1.6;padding:5px 7px;background:var(--bg);border-radius:5px;border:1px solid var(--border)">
+        ⓘ Vị trí avatar được lưu vào preset. Chọn Auto để kề nav bar.
+      </div>
+
+      <label class="fl" style="margin-top:9px">Ảnh avatar</label>
+      <div style="display:flex;align-items:center;gap:9px;margin-top:4px">
+        <div class="avatar-upload-box" id="avatarUploadBox" title="Click để tải ảnh lên" onclick="document.getElementById('avatarFileInput').click()">
+          <span class="avatar-upload-placeholder">👤</span>
+        </div>
+        <div style="flex:1">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);line-height:1.5">Click vào hình tròn để tải ảnh lên.<br/>Nếu không có ảnh sẽ hiển thị chữ cái đầu.</div>
+          <button class="btn btn-d" style="height:22px;font-size:.6rem;padding:0 8px;margin-top:5px" onclick="clearAvatar()">✕ Xóa ảnh</button>
+        </div>
+      </div>
+
+      <label class="fl">Tên hiển thị</label>
+      <input type="text" id="avatarName" value="username" oninput="applySettings()" placeholder="VD: username"/>
+
+      <label class="fl">Kích thước avatar</label>
+      <div style="display:flex;align-items:center;gap:9px">
+        <input type="range" id="avatarSizeRange" min="24" max="52" value="32" oninput="onAvatarSizeChange(this)"/>
+        <span id="avatarSizeLabel" style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent);width:28px;flex-shrink:0">32</span>
+      </div>
+
+      <label class="fl" style="margin-top:10px">Vị trí avatar</label>
+      <div class="seg-ctrl" id="avatarPosSel">
+        <div class="seg-ctrl-opt active" data-val="auto" onclick="setAvatarPos('auto',this)">Auto</div>
+        <div class="seg-ctrl-opt" data-val="top" onclick="setAvatarPos('top',this)">⬆ Trên cùng</div>
+        <div class="seg-ctrl-opt" data-val="bottom" onclick="setAvatarPos('bottom',this)">⬇ Dưới cùng</div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--muted);margin-top:4px;line-height:1.5">
+        Auto: kề nav bar · Trên/Dưới: vị trí cố định
+      </div>
+    </div>
+  </div>
+
+</div><!-- settings-panel -->
+</div><!-- .master -->
+
+<!-- Modal: Save Preset -->
+<div class="modal-bg hidden" id="modalSavePreset">
+  <div class="modal">
+    <h3>💾 Lưu Preset</h3>
+    <label class="fl" style="margin-top:0">Tên preset</label>
+    <input type="text" id="presetNameInp" placeholder="VD: Dark Motivation"/>
+    <div class="row" style="margin-top:12px">
+      <button class="btn btn-p" style="flex:1" onclick="confirmSavePreset()">Lưu</button>
+      <button class="btn btn-s" onclick="closeModal('modalSavePreset')">Huỷ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Pick icon -->
+<div class="modal-bg hidden" id="modalPickIcon">
+  <div class="modal" style="max-width:380px">
+    <h3 id="modalPickIconTitle">🔘 Chọn icon</h3>
+    <div class="modal-icon-grid" id="iconPickerGrid"></div>
+    <div class="row" style="margin-top:5px">
+      <button class="btn btn-s" style="flex:1" onclick="uploadIconForPicker()">📁 Từ file</button>
+      <button class="btn btn-s" onclick="closeModal('modalPickIcon')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirm clear all -->
+<div class="modal-bg hidden" id="modalConfirmClear">
+  <div class="modal">
+    <h3>🗑 Xóa tất cả slides?</h3>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);margin-bottom:14px">
+      Thao tác này không thể hoàn tác.
+    </p>
+    <div class="row" style="margin-top:0">
+      <button class="btn btn-d" style="flex:1" onclick="confirmClearAll()">Xóa tất cả</button>
+      <button class="btn btn-s" onclick="closeModal('modalConfirmClear')">Huỷ</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="iconUploadInput" accept="image/png,image/svg+xml,image/jpeg,image/webp" style="display:none"/>
+<input type="file" id="avatarFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none"/>
+<input type="file" id="presetImportInput" accept=".json" style="display:none"/>
+
+<script>
+// ══════════════════════════════════════════════
+//  NLP ENGINE — Rule-Based Transcript Engine v2
+//  Offline, free, optimised for unpunctuated
+//  English speech transcripts (no API needed)
+// ══════════════════════════════════════════════
+
+let nlpReady = false;
+
+function initNLP() {
+  const statusEl = document.getElementById('nlpStatus');
+  // Engine is pure JS — always ready immediately
+  nlpReady = true;
+  statusEl.className = 'nlp-badge ready';
+  statusEl.textContent = '✓ Rule-Based Engine v2 — offline, miễn phí, tối ưu cho transcript';
+  document.getElementById('addPunctBtn').disabled = false;
+  document.getElementById('previewDiffBtn').disabled = false;
+}
+
+// ── Words that strongly signal the START of a new sentence ──
+const SENT_STARTERS = new Set([
+  // Conjunctive adverbs / discourse markers
+  'however','nevertheless','nonetheless','therefore','furthermore','moreover',
+  'additionally','consequently','subsequently','meanwhile','afterward','afterwards',
+  'later','eventually','finally','initially','ultimately','fortunately',
+  'unfortunately','surprisingly','interestingly','suddenly','immediately',
+  'apparently','obviously','clearly','certainly','honestly','basically',
+  'honestly','needless','regardless','overall','instead','otherwise',
+  // Coordinating (when starting a new clause with capital)
+  'but','and','so','yet','nor',
+  // Common narrative starters
+  'that','this','it','he','she','they','we','i','you',
+  'my','his','her','their','our','its',
+  'the','a','an',
+  'there','here',
+  // Time/sequence markers
+  'after','before','when','once','since','as','while','although','though',
+  'because','if','unless','until','during',
+  // Question words (always start new sentence)
+  'who','what','when','where','why','how','which','whose','whom',
+  // Modal auxiliaries when at sentence start
+  'did','does','do','is','are','was','were','will','would','could','should',
+  'can','may','might','has','have','had',
+]);
+
+// ── Patterns that signal a SENTENCE BREAK before a word ──
+// These are higher-confidence triggers checked word-by-word
+const BREAK_BEFORE = [
+  // Spoken discourse pivots
+  /^(that('s| is| was)|this is|it was|it('s| is)|there was|there were|there('s| is))\b/i,
+  // Personal pronouns starting narrative shift
+  /^(he |she |they |we |i |you )(said|told|asked|answered|replied|thought|felt|knew|saw|heard|decided|turned|walked|ran|looked|smiled|laughed|cried|called|left|came|went|took|made|found|tried|wanted|needed|had to|was |were |would|could)\b/i,
+  // Quoted speech introducer
+  /^(said|asked|replied|told|explained|added|continued|whispered|shouted|cried|exclaimed|insisted|demanded|warned|admitted|confessed|announced|declared|responded|noted|observed)\b/i,
+];
+
+// ── Question detection ──
+const Q_STARTERS = /^(who|what|when|where|why|how|which|whose|whom|did|does|do|is|are|was|were|will|would|could|should|can|may|might|has|have|had|isn't|aren't|wasn't|weren't|don't|doesn't|didn't|won't|wouldn't|couldn't|shouldn't)\b/i;
+const Q_TAG_ENDINGS = /\b(right|correct|okay|ok|huh|isn't it|aren't they|wasn't it|weren't they|don't you|doesn't it|didn't it|won't you|wouldn't it)\s*$/i;
+
+// ── Exclamation detection ──
+const EXCLAIM_STARTERS = /^(wow|oh|ah|hey|wait|stop|no|yes|great|amazing|incredible|unbelievable|impossible|really|seriously|absolutely|exactly|perfect|wonderful|terrible|awful|damn|gosh|goodness|thank god|oh my|oh no)\b/i;
+const EXCLAIM_ENDINGS  = /\b(indeed|absolutely|definitely|certainly|of course|obviously|no doubt|at all|for sure)\s*$/i;
+
+// ── Comma rules ──
+// After introductory adverbial phrases
+const INTRO_ADVERB = /^(however|nevertheless|therefore|furthermore|moreover|additionally|consequently|subsequently|meanwhile|afterward|afterwards|initially|ultimately|fortunately|unfortunately|surprisingly|basically|honestly|overall|instead|otherwise|in fact|in addition|on the other hand|as a result|for example|for instance|in other words|at the same time|at first|at last|in turn|by the way|of course|in short|to be honest|needless to say|that said|that being said)\s+/i;
+
+// ── Helpers ──
+function capitalizeFirst(str) {
+  if (!str) return str;
+  // Handle quoted openings like "she said, 'hello..."
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function stripTrailingPunct(s) {
+  return s.replace(/[.!?,;:]+$/, '').trim();
+}
+
+function detectEnding(sentence, mode) {
+  const trimmed = sentence.trim();
+  const lower   = trimmed.toLowerCase();
+
+  // Question?
+  if (Q_STARTERS.test(trimmed)) return '?';
+  if (mode !== 'conservative' && Q_TAG_ENDINGS.test(lower)) return '?';
+
+  // Exclamation!
+  if (mode === 'full') {
+    if (EXCLAIM_STARTERS.test(trimmed)) return '!';
+    if (EXCLAIM_ENDINGS.test(lower))    return '!';
+  }
+
+  return '.';
+}
+
+function addCommas(s) {
+  // Introductory adverb comma: "However she left" → "However, she left"
+  s = s.replace(INTRO_ADVERB, (m, adv) => adv + ', ');
+
+  // Coordinating conjunctions: only but/yet/so/nor (safer than and/for)
+  s = s.replace(/(?<![,;])\s+(but|yet|so|nor)\s+(?=[a-z])/gi, (m, conj) => `, ${conj} `);
+
+  // Subordinating conjunctions (clear clause boundaries)
+  s = s.replace(/(?<![,;])\s+(because|although|though|while|whereas|unless|until|even though|even if)\s+/gi,
+    (m, conj) => `, ${conj} `);
+
+  // Clean up artefacts
+  s = s.replace(/,\s*,/g, ',').replace(/\s{2,}/g, ' ');
+  return s;
+}
+
+// ══════════════════════════════════════════════
+//  SENTENCE SPLITTER — heart of the engine
+//  Works purely on token patterns, no existing
+//  punctuation needed (designed for transcripts)
+// ══════════════════════════════════════════════
+function splitIntoSentences(text) {
+  // 1. Normalise whitespace, keep existing sentence-ending punct as hints
+  text = text.replace(/\s+/g, ' ').trim();
+
+  const words = text.split(' ');
+  const sentences = [];
+  let current = [];
+
+  for (let i = 0; i < words.length; i++) {
+    const word  = words[i];
+    const lower = word.toLowerCase().replace(/[^a-z']/g, '');
+    const prev  = current.length > 0 ? current[current.length - 1] : '';
+    const prevLower = prev.toLowerCase().replace(/[^a-z']/g, '');
+
+    // ── If word already ends with sentence-terminal punctuation ──
+    if (/[.!?]$/.test(word) && !ABBREVS.has(lower.replace(/[.!?]+$/,''))) {
+      current.push(word);
+      // Only split if next word starts with uppercase or is a strong starter
+      const next = words[i + 1] || '';
+      if (!next || /^[A-Z]/.test(next) || SENT_STARTERS.has(next.toLowerCase().replace(/[^a-z']/g,''))) {
+        sentences.push(current.join(' '));
+        current = [];
+      }
+      continue;
+    }
+
+    // ── Minimum sentence length guard (avoid 1-2 word fragments) ──
+    const minLen = 8;
+    if (current.length >= minLen) {
+
+      // Check if this word is a high-confidence sentence starter
+      const isStrongStarter = BREAK_BEFORE.some(re => {
+        const lookahead = words.slice(i, i + 4).join(' ');
+        return re.test(lookahead);
+      });
+
+      // Check if prev word ended the thought and this word starts a new one
+      const prevEndedThought = /[,;]$/.test(prev) && SENT_STARTERS.has(lower);
+      const freshClause      = SENT_STARTERS.has(lower) && current.length >= 12;
+      const afterReportVerb  = SENT_STARTERS.has(lower) &&
+        /^(said|told|asked|replied|explained|added|warned|admitted|announced)$/i.test(prevLower);
+
+      if (isStrongStarter || prevEndedThought || afterReportVerb ||
+          (freshClause && /^(he|she|they|i|we|it|the|this|that|there|after|when|although|because|but|however|so|then)\b/i.test(word))) {
+        sentences.push(current.join(' '));
+        current = [];
+      }
+    }
+
+    current.push(word);
+  }
+
+  if (current.length > 0) sentences.push(current.join(' '));
+  return sentences.filter(s => s.trim().length > 0);
+}
+
+// ══════════════════════════════════════════════
+//  CORE PUNCTUATION ENGINE (public API)
+// ══════════════════════════════════════════════
+function addPunctuation(rawText, mode = 'smart') {
+  // 1. Pre-clean: strip stray lone dots/commas inside words
+  let text = rawText
+    .replace(/\s+/g, ' ')
+    .replace(/([a-zA-Z])\s*\.\s*([a-z])/g, '$1 $2')  // mid-word dots
+    .trim();
+
+  // 2. Split into sentences using rule-based splitter
+  const sentences = splitIntoSentences(text);
+
+  if (!sentences.length) return capitalizeFirst(text) + '.';
+
+  // 3. Process each sentence
+  const result = sentences.map(sent => {
+    let s = stripTrailingPunct(sent).trim();
+    if (!s) return '';
+
+    // Capitalize
+    s = capitalizeFirst(s);
+
+    // Comma insertion in full/smart modes
+    if (mode === 'full' || mode === 'smart') {
+      s = addCommas(s);
+    }
+
+    // Terminal punctuation
+    const ending = detectEnding(s, mode);
+    return s + ending;
+  }).filter(Boolean);
+
+  return result.join(' ');
+}
+
+// ══════════════════════════════════════════════
+//  DIFF — highlight what changed
+// ══════════════════════════════════════════════
+function buildDiff(before, after) {
+  // Simple token-level diff to show added punctuation in green
+  const bWords = before.split(/\s+/);
+  const aWords = after.split(/\s+/);
+  const out = [];
+  let bi = 0, ai = 0;
+  while (ai < aWords.length) {
+    const aw = aWords[ai];
+    const bw = bWords[bi] || '';
+    if (aw === bw) {
+      out.push(escHtml(aw));
+      bi++; ai++;
+    } else if (aw.replace(/[.!?,]/g, '') === bw.replace(/[.!?,]/g, '') ||
+               aw.toLowerCase().replace(/[.!?,]/g,'') === bw.toLowerCase().replace(/[.!?,]/g,'')) {
+      // Same word but punctuation/capitalization added
+      out.push(`<span class="punct-diff-added">${escHtml(aw)}</span>`);
+      bi++; ai++;
+    } else {
+      out.push(`<span class="punct-diff-added">${escHtml(aw)}</span>`);
+      ai++;
+    }
+  }
+  return out.join(' ');
+}
+
+// ══════════════════════════════════════════════
+//  UI HANDLERS for NLP punctuation
+// ══════════════════════════════════════════════
+function onNoPunctChange() {
+  const checked = document.getElementById('noPunctCheck').checked;
+  document.getElementById('addPunctRow').style.display = checked ? 'block' : 'none';
+  document.getElementById('diffPreviewBox').style.display = 'none';
+}
+
+function addPunctuationNLP() {
+  const ta = document.getElementById('inputText');
+  const raw = ta.value.trim();
+  if (!raw) { showToast('Vui lòng dán văn bản trước.', 'err'); return; }
+  if (!nlpReady) { showToast('NLP chưa sẵn sàng, thử lại sau.', 'err'); return; }
+
+  const btn = document.getElementById('addPunctBtn');
+  const status = document.getElementById('punctStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ Đang xử lý...';
+  status.style.display = 'block';
+
+  const mode = document.getElementById('punctMode').value;
+
+  // Use setTimeout to not block UI
+  setTimeout(() => {
+    try {
+      const result = addPunctuation(raw, mode);
+      ta.value = result;
+      const sentCount = result.split(/[.!?]+\s/).filter(Boolean).length;
+      status.textContent = `✓ Hoàn tất — ${sentCount} câu, ${result.length} ký tự. Nhấn ▶ Process để tiếp tục.`;
+      status.style.color = 'var(--accent)';
+      document.getElementById('diffPreviewBox').style.display = 'none';
+      showToast(`✓ Đã thêm dấu câu (${sentCount} câu)`, 'ok');
+    } catch(e) {
+      status.textContent = '✗ Lỗi xử lý: ' + e.message;
+      status.style.color = 'var(--danger)';
+      showToast('Lỗi NLP', 'err');
+    }
+    btn.disabled = false;
+    btn.textContent = '✦ Thêm dấu câu (NLP)';
+  }, 50);
+}
+
+function previewPunctDiff() {
+  const raw = document.getElementById('inputText').value.trim();
+  if (!raw) { showToast('Vui lòng dán văn bản trước.', 'err'); return; }
+  if (!nlpReady) { showToast('NLP chưa sẵn sàng.', 'err'); return; }
+
+  const mode = document.getElementById('punctMode').value;
+  const box = document.getElementById('diffPreviewBox');
+
+  setTimeout(() => {
+    const result = addPunctuation(raw, mode);
+    const diffHtml = buildDiff(raw, result);
+    // Show first ~400 chars of diff
+    const preview = diffHtml.length > 1200 ? diffHtml.slice(0, 1200) + '…' : diffHtml;
+    box.innerHTML = `<div style="color:var(--muted);margin-bottom:4px;font-size:.58rem;letter-spacing:.1em">PREVIEW (màu vàng = thêm mới)</div>${preview}`;
+    box.style.display = 'block';
+  }, 30);
+}
+
+
+// ══════════════════════════════════════════════
+//  BUILT-IN ICONS
+// ══════════════════════════════════════════════
+const BI={
+  filled_heart:{lbl:'❤ Heart',   r:(sz,c)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#ed4956" stroke="#ed4956" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`},
+  outline_heart:{lbl:'🤍 Heart',  r:(sz,c)=>ms(`<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>`,sz,c)},
+  bubble:       {lbl:'💬 Bubble', r:(sz,c)=>ms(`<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,sz,c)},
+  round_bubble: {lbl:'○ Round',  r:(sz,c)=>ms(`<path d="M12 2C6.48 2 2 6.03 2 11c0 2.7 1.2 5.12 3.12 6.83L4 21l3.5-1.5C8.9 20.1 10.4 20.5 12 20.5c5.52 0 10-4.03 10-9S17.52 2 12 2z"/>`,sz,c)},
+  send_arrow:   {lbl:'↗ Send',   r:(sz,c)=>ms(`<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>`,sz,c)},
+  share_arrow:  {lbl:'⤴ Share',  r:(sz,c)=>ms(`<polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/>`,sz,c)},
+  bookmark:     {lbl:'🔖 Save',  r:(sz,c)=>ms(`<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>`,sz,c)},
+  flag:         {lbl:'🚩 Flag',  r:(sz,c)=>ms(`<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>`,sz,c)},
+  more:         {lbl:'··· More', r:(sz,c)=>ms(`<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>`,sz,c)},
+  home:         {lbl:'⌂ Home',   r:(sz,c)=>ms(`<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`,sz,c)},
+  reels:        {lbl:'▶ Reels',  r:(sz,c)=>ms(`<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>`,sz,c)},
+  search:       {lbl:'🔍 Search',r:(sz,c)=>ms(`<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`,sz,c)},
+  profile:      {lbl:'👤 Profile',r:(sz,c)=>ms(`<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>`,sz,c)},
+  add_box:      {lbl:'＋ Add',   r:(sz,c)=>ms(`<rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>`,sz,c)},
+  thumbup:      {lbl:'👍 Like',  r:(sz,c)=>ms(`<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>`,sz,c)},
+  eye:          {lbl:'👁 View',  r:(sz,c)=>ms(`<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,sz,c)},
+  fire:         {lbl:'🔥 Fire',  r:(_,__)=>`<span style="font-size:${_}px;line-height:1;display:block">🔥</span>`},
+  star:         {lbl:'⭐ Star',  r:(_,__)=>`<span style="font-size:${_}px;line-height:1;display:block">⭐</span>`},
+  gem:          {lbl:'💎 Gem',   r:(_,__)=>`<span style="font-size:${_}px;line-height:1;display:block">💎</span>`},
+  none:         {lbl:'— None',  r:()=>''},
+};
+function ms(p,sz,c,sw=1.75){
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+}
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const DEF_LEFT=[
+  {type:'builtin',id:'filled_heart',count:'31,230',showCount:true},
+  {type:'builtin',id:'bubble',count:'',showCount:false},
+  {type:'builtin',id:'send_arrow',count:'',showCount:false},
+];
+const DEF_RIGHT=[
+  {type:'builtin',id:'bookmark',count:'',showCount:false},
+];
+
+const S={
+  segments:[],slides:[],currentIdx:0,
+  bgColor:'#ffffff',textColor:'#000000',hashColor:'#00376b',
+  iconColor:'#000000',countColor:'#000000',
+  fontSize:12,lineH:1.55,textAlign:'justify',indent:0,iconSize:18,
+  iconBarPos:'top',
+  showLikesRow:true,
+  leftSlots:JSON.parse(JSON.stringify(DEF_LEFT)),
+  rightSlots:JSON.parse(JSON.stringify(DEF_RIGHT)),
+  navTabs:[
+    {iconType:'builtin',iconId:'home',iconDataUrl:null,label:''},
+    {iconType:'builtin',iconId:'reels',iconDataUrl:null,label:''},
+    {iconType:'builtin',iconId:'add_box',iconDataUrl:null,label:''},
+    {iconType:'builtin',iconId:'search',iconDataUrl:null,label:''},
+    {iconType:'builtin',iconId:'profile',iconDataUrl:null,label:''},
+  ],
+  navStyle:'custom',
+  navBarPos:'bottom',
+  customIconLib:[],
+  presets:[],
+  showAvatar:false,
+  avatarPos:'auto',
+  avatarDataUrl:null,
+  avatarName:'username',
+  avatarSize:32,
+};
+
+// ══════════════════════════════════════════════
+//  ABBREVS
+// ══════════════════════════════════════════════
+const ABBREVS=new Set(['mr','mrs','ms','dr','prof','sr','jr','rev','gen','sgt','cpl','pvt','st','ave','blvd','dept','est','govt','inc','corp','ltd','co','jan','feb','mar','apr','jun','jul','aug','sep','oct','nov','dec','mon','tue','wed','thu','fri','sat','sun','vs','etc','e.g','i.e','approx','vol','no','pg','pp','u.s','u.k','e.u','u.n','p.o','fig','ed','al','ibid','op','cit']);
+function isSentEnd(words,i){
+  const tok=words[i];
+  if(!tok||!/[.!?]$/.test(tok))return false;
+  if(/^\d[\d,]*\.\d/.test(tok))return false;
+  const base=tok.replace(/[.!?]+$/,'').toLowerCase();
+  if(ABBREVS.has(base)||/^[a-z]$/.test(base))return false;
+  let next='';
+  for(let j=i+1;j<words.length;j++){if(words[j].trim()){next=words[j];break;}}
+  if(!next)return true;
+  return /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝ\u00C0-\u024F]/.test(next);
+}
+
+// ══════════════════════════════════════════════
+//  PROCESS TEXT
+// ══════════════════════════════════════════════
+function processText(){
+  const raw=document.getElementById('inputText').value;
+  const nVal=parseInt(document.getElementById('nWords').value,10);
+  if(!raw.trim()){showToast('Vui lòng dán văn bản.');return;}
+  if(!nVal||nVal<1){showToast('N phải ≥ 1.');return;}
+  let text=raw.replace(/\[music\]/gi, '').trim();
+  const words=text.split(/\s+/).filter(Boolean);
+  if(!words.length)return;
+  const segs=[];let start=0;
+  while(start<words.length){
+    let end=start+nVal-1;
+    if(end>=words.length){segs.push(words.slice(start).join(' '));break;}
+    let found=false;
+    for(let i=end;i<words.length;i++){
+      if(isSentEnd(words,i)){segs.push(words.slice(start,i+1).join(' '));start=i+1;found=true;break;}
+    }
+    if(!found){segs.push(words.slice(start).join(' '));break;}
+  }
+  S.segments=segs;
+  const totalW=segs.reduce((a,g)=>a+g.split(/\s+/).filter(Boolean).length,0);
+  document.getElementById('sS').textContent=segs.length;
+  document.getElementById('sW').textContent=totalW.toLocaleString();
+  document.getElementById('sA').textContent=Math.round(totalW/segs.length);
+  document.getElementById('statsBar').style.display='flex';
+  document.getElementById('dlTxtBtn').disabled=false;
+  document.getElementById('dlLastSentBtn').disabled=false;
+  document.getElementById('dlFirstSentBtn').disabled=false;
+  document.getElementById('addAllBtn').disabled=false;
+  renderSegList(segs);
+}
+function renderSegList(segs){
+  const list=document.getElementById('segList');list.innerHTML='';
+  segs.forEach((seg,idx)=>{
+    const wc=seg.split(/\s+/).filter(Boolean).length;
+    const d=document.createElement('div');d.className='seg-item';
+    d.style.animationDelay=`${idx*.02}s`;
+    d.innerHTML=`<div class="seg-meta"><span class="seg-n">#${idx+1}</span><span class="seg-wc">${wc}w</span></div><div class="seg-prev">${escHtml(seg)}</div>`;
+    d.addEventListener('click',()=>loadSlide(seg,idx));
+    list.appendChild(d);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  SLIDES
+// ══════════════════════════════════════════════
+function loadSlide(text,segIdx){
+  const ex=S.slides.findIndex(s=>s===text);
+  if(ex>=0){S.currentIdx=ex;}
+  else{S.slides.push(text);S.currentIdx=S.slides.length-1;}
+  renderFrame();updateBatchGrid();
+  document.getElementById('dlOneBtn').disabled=false;
+  document.getElementById('dlAllBtn').disabled=false;
+  document.querySelectorAll('.seg-item').forEach((el,i)=>el.classList.toggle('active',i===segIdx));
+}
+function addAllToPreview(){
+  if(!S.segments.length)return;
+  S.slides=[...S.segments];S.currentIdx=0;
+  renderFrame();updateBatchGrid();
+  document.getElementById('dlOneBtn').disabled=false;
+  document.getElementById('dlAllBtn').disabled=false;
+  showToast(`✓ Đã thêm ${S.segments.length} đoạn`,'ok');
+}
+function prevSlide(){if(!S.slides.length)return;S.currentIdx=(S.currentIdx-1+S.slides.length)%S.slides.length;renderFrame();highlightBatch();}
+function nextSlide(){if(!S.slides.length)return;S.currentIdx=(S.currentIdx+1)%S.slides.length;renderFrame();highlightBatch();}
+function removeCurrentSlide(){
+  if(!S.slides.length)return;
+  S.slides.splice(S.currentIdx,1);
+  if(!S.slides.length){S.currentIdx=0;clearFrame();updateBatchGrid();return;}
+  S.currentIdx=Math.min(S.currentIdx,S.slides.length-1);
+  renderFrame();updateBatchGrid();
+}
+function removeSlideAt(idx){
+  S.slides.splice(idx,1);
+  if(!S.slides.length){S.currentIdx=0;clearFrame();updateBatchGrid();return;}
+  S.currentIdx=Math.min(S.currentIdx,S.slides.length-1);
+  renderFrame();updateBatchGrid();
+}
+function clearAllSlides(){openModal('modalConfirmClear');}
+function confirmClearAll(){
+  S.slides=[];S.currentIdx=0;
+  clearFrame();updateBatchGrid();
+  closeModal('modalConfirmClear');
+  showToast('Đã xóa tất cả slides');
+}
+function goToSlide(idx){S.currentIdx=idx;renderFrame();highlightBatch();}
+
+// ══════════════════════════════════════════════
+//  RENDER FRAME
+// ══════════════════════════════════════════════
+function renderFrame(){
+  const frame=document.getElementById('igFrame');
+  frame.style.background=S.bgColor;
+
+  const likesEl=document.getElementById('igLikesEl');
+  const likesVal=document.getElementById('cfgLikes').value.trim();
+  const showLikesRow=document.getElementById('showLikesRow').checked;
+  if(S.iconBarPos==='top' && showLikesRow && likesVal){
+    likesEl.textContent=likesVal+' likes';
+    likesEl.style.display='block';
+    likesEl.style.color=S.textColor;
+  } else {
+    likesEl.style.display='none';
+  }
+
+  const bodyEl=document.getElementById('igBodyEl');
+  bodyEl.style.fontSize=S.fontSize+'px';
+  bodyEl.style.lineHeight=S.lineH;
+  bodyEl.style.textAlign=S.textAlign;
+  bodyEl.style.color=S.textColor;
+  bodyEl.style.textIndent=S.indent+'px';
+  if(S.slides.length>0){
+    bodyEl.textContent=S.slides[S.currentIdx];
+    autoFitFont(bodyEl);
+  }
+
+  const hashEl=document.getElementById('igHashEl');
+  hashEl.textContent=document.getElementById('cfgHash').value;
+  hashEl.style.color=S.hashColor;
+
+  renderIconBars();
+  renderBottomNav();
+  renderAvatar();
+
+  document.getElementById('pagerLabel').textContent=
+    S.slides.length>0?`${S.currentIdx+1} / ${S.slides.length}`:'—';
+}
+
+function clearFrame(){
+  document.getElementById('igBodyEl').innerHTML=
+    '<span style="color:#ccc;font-style:italic;font-size:11px">← Chọn đoạn hoặc nhấn "Thêm tất cả"</span>';
+  document.getElementById('pagerLabel').textContent='—';
+  document.getElementById('dlOneBtn').disabled=true;
+  document.getElementById('dlAllBtn').disabled=true;
+  document.getElementById('batchSection').style.display='none';
+}
+
+function autoFitFont(el){
+  const container=el.parentElement;
+  let fs=S.fontSize;el.style.fontSize=fs+'px';
+  let safety=0;
+  while(el.scrollHeight>container.clientHeight+1&&fs>6&&safety<80){
+    fs-=0.5;el.style.fontSize=fs+'px';safety++;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  ICON BARS
+// ══════════════════════════════════════════════
+function resolveIconHtml(slot,sz,col){
+  if(!slot)return '';
+  if(slot.type==='custom')
+    return `<img src="${slot.dataUrl}" style="width:${sz}px;height:${sz}px;object-fit:contain;display:block"/>`;
+  const def=BI[slot.id];
+  return def?def.r(sz,col):'';
+}
+
+function buildIconBarSide(slots,sz,col,countCol){
+  return slots.map(slot=>{
+    const iconHtml=resolveIconHtml(slot,sz,col);
+    const showCount=slot.showCount&&slot.count;
+    if(showCount){
+      return `<div class="ig-icon-group" style="margin-right:${Math.round(sz*.6)}px">
+        ${iconHtml}
+        <span class="ig-icon-count" style="color:${countCol};font-size:${Math.max(9,Math.round(sz*.65))}px">${escHtml(slot.count)}</span>
+      </div>`;
+    }
+    return `<div style="margin-right:${Math.round(sz*.55)}px;display:inline-flex">${iconHtml}</div>`;
+  }).join('');
+}
+
+function renderIconBars(){
+  const {iconSize:sz,iconColor:col,countColor:cc,iconBarPos,leftSlots,rightSlots}=S;
+  const borderCol=S.bgColor==='#000000'?'#333':'#efefef';
+
+  const topBar=document.getElementById('igIconBarTop');
+  const botBar=document.getElementById('igIconBarBottom');
+
+  if(iconBarPos==='top'){
+    topBar.style.display='flex';
+    botBar.style.display='none';
+    document.getElementById('igLeftTop').innerHTML=buildIconBarSide(leftSlots,sz,col,cc);
+    document.getElementById('igRightTop').innerHTML=buildIconBarSide(rightSlots,sz,col,cc);
+  } else {
+    topBar.style.display='none';
+    botBar.style.display='flex';
+    botBar.style.borderTopColor=borderCol;
+    document.getElementById('igLeftBottom').innerHTML=buildIconBarSide(leftSlots,sz,col,cc);
+    document.getElementById('igRightBottom').innerHTML=buildIconBarSide(rightSlots,sz,col,cc);
+  }
+}
+
+function renderBottomNav(){
+  const el=document.getElementById('igBottom');
+  const ns=S.navStyle;
+  const borderCol=S.bgColor==='#000000'?'#333':'#efefef';
+  if(ns==='none'){el.style.display='none';return;}
+  el.style.display='flex';
+  
+  const frame = document.getElementById('igFrame');
+  if (S.navBarPos === 'top') {
+    frame.insertBefore(el, frame.firstChild);
+    el.style.borderTop = 'none';
+    el.style.borderBottom = '1px solid ' + borderCol;
+  } else {
+    frame.appendChild(el);
+    el.style.borderBottom = 'none';
+    el.style.borderTop = '1px solid ' + borderCol;
+  }
+  if(ns==='minimal'){
+    el.innerHTML=`<div style="width:100%;height:2px;background:${borderCol};border-radius:1px;opacity:.25"></div>`;
+    return;
+  }
+  const navSz=Math.round(S.iconSize*.85);
+  el.innerHTML=S.navTabs.map(tab=>{
+    const ih=resolveIconHtml({type:tab.iconType,id:tab.iconId,dataUrl:tab.iconDataUrl},navSz,S.iconColor);
+    return `<div class="ig-bottom-tab" style="color:${S.textColor}">${ih}${tab.label?`<span style="font-size:7px;font-family:-apple-system,sans-serif;color:${S.textColor}">${escHtml(tab.label)}</span>`:''}</div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  SLOT ROWS UI
+// ══════════════════════════════════════════════
+function buildSlotRows(side){
+  const slots=side==='left'?S.leftSlots:S.rightSlots;
+  const containerId=side==='left'?'leftSlotRows':'rightSlotRows';
+  const container=document.getElementById(containerId);
+  container.innerHTML='';
+  slots.forEach((slot,idx)=>{
+    const row=document.createElement('div');
+    row.className='icon-slot-row';
+
+    const iconBtn=document.createElement('div');
+    iconBtn.className='icon-slot-preview';
+    iconBtn.title='Click để đổi icon';
+    iconBtn.innerHTML=resolveIconHtml(slot,16,S.iconColor)||'?';
+    iconBtn.addEventListener('click',()=>openIconPicker(side,idx));
+
+    const countInp=document.createElement('input');
+    countInp.type='text';countInp.className='icon-slot-count';
+    countInp.placeholder='VD: 1,234';countInp.value=slot.count||'';
+    countInp.title='Số lượt (để trống = ẩn)';
+    countInp.addEventListener('input',()=>{
+      slots[idx].count=countInp.value;
+      if(countInp.value) slots[idx].showCount=true;
+      renderFrame();
+      const isOn=slots[idx].showCount&&slots[idx].count;
+      visBtn.className='icon-slot-vis '+(isOn?'on':'off');
+      visBtn.textContent=isOn?'👁':'—';
+    });
+
+    const randBtn=document.createElement('button');
+    randBtn.className='btn btn-s';
+    randBtn.style.cssText='height:24px;padding:0 6px;font-size:.7rem;flex-shrink:0;min-width:24px;';
+    randBtn.title='Random số 0–99999';
+    randBtn.textContent='🎲';
+    randBtn.addEventListener('click',()=>{
+      const rnd=Math.floor(Math.random()*100000);
+      const formatted=rnd.toLocaleString('en-US');
+      slots[idx].count=formatted;
+      slots[idx].showCount=true;
+      countInp.value=formatted;
+      renderFrame();
+      visBtn.className='icon-slot-vis on';
+      visBtn.textContent='👁';
+    });
+
+    const visBtn=document.createElement('div');
+    visBtn.className='icon-slot-vis '+(slot.showCount&&slot.count?'on':'off');
+    visBtn.title='Hiện/ẩn số đếm';
+    visBtn.textContent=slot.showCount?'👁':'—';
+    visBtn.addEventListener('click',()=>{
+      if(!slot.count){showToast('Nhập số đếm trước','err');return;}
+      slots[idx].showCount=!slots[idx].showCount;
+      renderFrame();
+      const isOn=slots[idx].showCount&&slots[idx].count;
+      visBtn.className='icon-slot-vis '+(isOn?'on':'off');
+      visBtn.textContent=isOn?'👁':'—';
+    });
+
+    const delBtn=document.createElement('button');
+    delBtn.className='btn btn-d';delBtn.style.cssText='height:24px;padding:0 6px;font-size:.6rem;flex-shrink:0';
+    delBtn.textContent='×';
+    delBtn.addEventListener('click',()=>{slots.splice(idx,1);buildSlotRows(side);renderFrame();});
+
+    row.appendChild(iconBtn);row.appendChild(countInp);row.appendChild(randBtn);row.appendChild(visBtn);row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+
+function rebuildAllSlotRows(){
+  buildSlotRows('left');buildSlotRows('right');
+}
+
+function addIconSlot(side){
+  const slots=side==='left'?S.leftSlots:S.rightSlots;
+  slots.push({type:'builtin',id:'none',count:'',showCount:false});
+  buildSlotRows(side);renderFrame();
+}
+
+// ══════════════════════════════════════════════
+//  ICON PICKER MODAL
+// ══════════════════════════════════════════════
+let _pickerSide='left', _pickerIdx=0, _pickerContext='slot';
+let _pickerNavIdx=0;
+
+function openIconPicker(side,idx){
+  _pickerSide=side;_pickerIdx=idx;_pickerContext='slot';
+  document.getElementById('modalPickIconTitle').textContent='🔘 Chọn icon cho slot';
+  buildPickerGrid(id=>{
+    const slots=side==='left'?S.leftSlots:S.rightSlots;
+    slots[idx]={...slots[idx],type:'builtin',id,dataUrl:null};
+    closeModal('modalPickIcon');buildSlotRows(side);renderFrame();
+  },dataUrl=>{
+    const slots=side==='left'?S.leftSlots:S.rightSlots;
+    slots[idx]={...slots[idx],type:'custom',id:'c'+Date.now(),dataUrl};
+    closeModal('modalPickIcon');buildSlotRows(side);renderFrame();
+  });
+  openModal('modalPickIcon');
+}
+function openNavIconPicker(tabIdx){
+  _pickerNavIdx=tabIdx;_pickerContext='nav';
+  document.getElementById('modalPickIconTitle').textContent='🔘 Chọn icon cho tab nav';
+  buildPickerGrid(id=>{
+    S.navTabs[tabIdx]={...S.navTabs[tabIdx],iconType:'builtin',iconId:id,iconDataUrl:null};
+    closeModal('modalPickIcon');buildNavTabsEditor();renderBottomNav();
+  },dataUrl=>{
+    const cid='c'+Date.now();
+    S.customIconLib.push({id:cid,dataUrl,label:'custom'});
+    S.navTabs[tabIdx]={...S.navTabs[tabIdx],iconType:'custom',iconId:cid,iconDataUrl:dataUrl};
+    closeModal('modalPickIcon');buildNavTabsEditor();renderBottomNav();
+  });
+  openModal('modalPickIcon');
+}
+
+let _pickerOnBuiltin=null, _pickerOnCustom=null;
+function buildPickerGrid(onBuiltin,onCustom){
+  _pickerOnBuiltin=onBuiltin;_pickerOnCustom=onCustom;
+  const grid=document.getElementById('iconPickerGrid');
+  grid.innerHTML='';
+  Object.entries(BI).forEach(([id,def])=>{
+    const d=document.createElement('div');d.className='icon-opt';
+    d.innerHTML=def.r(18,S.iconColor)+`<span class="lbl">${def.lbl.replace(/.*\s/,'')}</span>`;
+    d.addEventListener('click',()=>onBuiltin(id));
+    grid.appendChild(d);
+  });
+  S.customIconLib.forEach(entry=>{
+    const d=document.createElement('div');d.className='icon-opt';
+    d.innerHTML=`<img src="${entry.dataUrl}" style="width:18px;height:18px;object-fit:contain;margin:0 auto;display:block"/><span class="lbl">${escHtml((entry.label||'').slice(0,5))}</span>`;
+    d.addEventListener('click',()=>onCustom(entry.dataUrl));
+    grid.appendChild(d);
+  });
+}
+
+function uploadIconForPicker(){
+  const inp=document.getElementById('iconUploadInput');
+  inp.onchange=async()=>{
+    const file=inp.files[0];if(!file)return;inp.value='';
+    const dataUrl=await fileToDataUrl(file);
+    const label=file.name.replace(/\.[^.]+$/,'').slice(0,12);
+    S.customIconLib.push({id:'c'+Date.now(),dataUrl,label});
+    if(_pickerOnCustom) _pickerOnCustom(dataUrl);
+    else closeModal('modalPickIcon');
+    showToast('✓ Đã thêm icon','ok');
+  };
+  inp.click();
+}
+
+let _uploadSide='left';
+function uploadIconToSlot(side){
+  _uploadSide=side;
+  const inp=document.getElementById('iconUploadInput');
+  inp.onchange=async()=>{
+    const file=inp.files[0];if(!file)return;inp.value='';
+    const dataUrl=await fileToDataUrl(file);
+    const label=file.name.replace(/\.[^.]+$/,'').slice(0,12);
+    const cid='c'+Date.now();
+    S.customIconLib.push({id:cid,dataUrl,label});
+    const slots=side==='left'?S.leftSlots:S.rightSlots;
+    slots.push({type:'custom',id:cid,dataUrl,label,count:'',showCount:false});
+    buildSlotRows(side);renderFrame();
+    showToast('✓ Đã thêm icon','ok');
+  };
+  inp.click();
+}
+
+// ══════════════════════════════════════════════
+//  NAV TABS EDITOR
+// ══════════════════════════════════════════════
+function buildNavTabsEditor(){
+  const container=document.getElementById('navTabRows');container.innerHTML='';
+  document.getElementById('navTabCount').textContent=`(${S.navTabs.length})`;
+  S.navTabs.forEach((tab,idx)=>{
+    const row=document.createElement('div');row.className='nav-tab-row';
+    const iconBtn=document.createElement('div');iconBtn.className='nav-tab-icon-btn';
+    iconBtn.innerHTML=tab.iconType==='custom'&&tab.iconDataUrl
+      ?`<img src="${tab.iconDataUrl}" style="width:15px;height:15px;object-fit:contain"/>`
+      :(BI[tab.iconId]?BI[tab.iconId].r(14,S.iconColor):'?');
+    iconBtn.addEventListener('click',()=>openNavIconPicker(idx));
+    const inp=document.createElement('input');
+    inp.type='text';inp.className='nav-tab-label-inp';
+    inp.placeholder='Label';inp.value=tab.label||'';
+    inp.addEventListener('input',()=>{S.navTabs[idx].label=inp.value;renderBottomNav();});
+    
+    const del=document.createElement('button');
+    del.className='btn btn-d';del.style.cssText='height:24px;padding:0 6px;font-size:.6rem;flex-shrink:0';
+    del.textContent='×';
+    del.addEventListener('click',()=>{S.navTabs.splice(idx,1);buildNavTabsEditor();renderBottomNav();});
+    row.appendChild(iconBtn);row.appendChild(inp);row.appendChild(del);
+    container.appendChild(row);
+  });
+}
+function addNavTab(){
+  S.navTabs.push({iconType:'builtin',iconId:'home',iconDataUrl:null,label:''});
+  buildNavTabsEditor();renderBottomNav();
+}
+
+// ══════════════════════════════════════════════
+//  BATCH GRID
+// ══════════════════════════════════════════════
+function updateBatchGrid(){
+  const section=document.getElementById('batchSection');
+  const grid=document.getElementById('batchGrid');
+  if(!S.slides.length){section.style.display='none';return;}
+  section.style.display='block';
+  document.getElementById('batchCount').textContent=`(${S.slides.length})`;
+  grid.innerHTML='';
+  S.slides.forEach((txt,i)=>{
+    const thumb=document.createElement('div');
+    thumb.className='batch-thumb'+(i===S.currentIdx?' bt-active':'');
+    const preview=txt.slice(0,45)+(txt.length>45?'…':'');
+    thumb.innerHTML=`<div class="bt-num">#${i+1}</div>
+      <div style="background:${S.bgColor};padding:5px;min-height:44px;font-family:-apple-system,sans-serif;font-size:7px;color:${S.textColor};line-height:1.35;word-break:break-word;border-radius:2px">${escHtml(preview)}</div>`;
+    const delBtn=document.createElement('button');
+    delBtn.className='bt-del';delBtn.textContent='×';delBtn.title='Xóa slide này';
+    delBtn.addEventListener('click',e=>{e.stopPropagation();removeSlideAt(i);});
+    thumb.appendChild(delBtn);
+    thumb.addEventListener('click',()=>goToSlide(i));
+    grid.appendChild(thumb);
+  });
+}
+function highlightBatch(){
+  document.querySelectorAll('.batch-thumb').forEach((el,i)=>el.classList.toggle('bt-active',i===S.currentIdx));
+}
+
+// ══════════════════════════════════════════════
+//  EXPORT
+// ══════════════════════════════════════════════
+async function captureFrame(){
+  const frame=document.getElementById('igFrame');
+  return html2canvas(frame,{
+    scale:3,useCORS:true,allowTaint:true,
+    backgroundColor:S.bgColor,logging:false,
+    width:frame.offsetWidth,height:frame.offsetHeight,
+  });
+}
+async function exportCurrent(){
+  if(!S.slides.length){showToast('Chưa có slide nào.');return;}
+  const btn=document.getElementById('dlOneBtn');
+  btn.textContent='⏳...';btn.disabled=true;
+  try{
+    const canvas=await captureFrame();
+    const a=document.createElement('a');
+    a.download=`ig_post_${S.currentIdx+1}.png`;
+    a.href=canvas.toDataURL('image/png');a.click();
+    showToast('✓ Đã tải PNG','ok');
+  }catch(e){showToast('Lỗi render','err');}
+  btn.textContent='↓ PNG slide này';btn.disabled=false;
+}
+async function exportAll(){
+  if(!S.slides.length){showToast('Chưa có slide nào.');return;}
+  const dlBtn=document.getElementById('dlAllBtn');
+  const pBar=document.getElementById('progressBar');
+  const pFill=document.getElementById('progressFill');
+  const pLabel=document.getElementById('progressLabel');
+  dlBtn.disabled=true;dlBtn.textContent='⏳...';
+  pBar.style.display='block';pFill.style.width='0%';
+  const zip=new JSZip();
+  const folder=zip.folder('ig_posts');
+  const origIdx=S.currentIdx;
+  for(let i=0;i<S.slides.length;i++){
+    pLabel.textContent=`Đang tạo ${i+1}/${S.slides.length}...`;
+    pFill.style.width=`${Math.round(i/S.slides.length*100)}%`;
+    S.currentIdx=i;renderFrame();
+    await new Promise(r=>setTimeout(r,100));
+    const canvas=await captureFrame();
+    if(canvas) folder.file(`post_${String(i+1).padStart(3,'0')}.png`,canvas.toDataURL('image/png').split(',')[1],{base64:true});
+  }
+  S.currentIdx=origIdx;renderFrame();
+  pFill.style.width='100%';pLabel.textContent='Nén ZIP...';
+  const blob=await zip.generateAsync({type:'blob'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='ig_posts.zip';a.click();
+  URL.revokeObjectURL(url);
+  pBar.style.display='none';pFill.style.width='0%';pLabel.textContent='';
+  dlBtn.disabled=false;dlBtn.textContent='⬇ Tất cả (ZIP)';
+  showToast(`✓ Đã xuất ${S.slides.length} ảnh`,'ok');
+}
+
+// ══════════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════════
+function setIconBarPos(val,el){
+  S.iconBarPos=val;
+  document.querySelectorAll('#iconBarPosSel .seg-ctrl-opt').forEach(o=>o.classList.toggle('active',o.dataset.val===val));
+  document.getElementById('likesRowCfg').style.display=val==='top'?'block':'none';
+  applySettings();
+}
+
+function setNavBarPos(val,el){
+  S.navBarPos=val;
+  document.querySelectorAll('#navBarPosSel .seg-ctrl-opt').forEach(o=>o.classList.toggle('active',o.dataset.val===val));
+  applySettings();
+}
+
+function applySettings(){
+  const showAvatarCb = document.getElementById('showAvatar');
+  if (showAvatarCb) {
+    S.showAvatar = showAvatarCb.checked;
+    document.getElementById('avatarCfg').style.display = S.showAvatar ? 'block' : 'none';
+    const nameInp = document.getElementById('avatarName');
+    if (nameInp) S.avatarName = nameInp.value;
+  }
+  S.navStyle=document.getElementById('navStyle').value;
+  S.textAlign=document.getElementById('textAlign').value;
+  S.showLikesRow=document.getElementById('showLikesRow').checked;
+  document.getElementById('navTabsEditor').style.display=S.navStyle==='custom'?'block':'none';
+  if(S.slides.length>0) renderFrame();
+  else{
+    document.getElementById('igFrame').style.background=S.bgColor;
+    renderIconBars();renderBottomNav();renderAvatar();
+    const likesEl=document.getElementById('igLikesEl');
+    if(S.iconBarPos==='top'&&S.showLikesRow){
+      const v=document.getElementById('cfgLikes').value.trim();
+      likesEl.textContent=v?v+' likes':'';likesEl.style.display='block';likesEl.style.color=S.textColor;
+    } else likesEl.style.display='none';
+  }
+}
+
+function setBgColor(el){
+  document.querySelectorAll('#bgSwatches .swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');S.bgColor=el.dataset.color;applySettings();
+}
+function setBgCustom(inp){document.querySelectorAll('#bgSwatches .swatch').forEach(s=>s.classList.remove('active'));S.bgColor=inp.value;applySettings();}
+function setTextColor(el){document.querySelectorAll('#textSwatches .swatch').forEach(s=>s.classList.remove('active'));el.classList.add('active');S.textColor=el.dataset.color;applySettings();}
+function setTextCustom(inp){document.querySelectorAll('#textSwatches .swatch').forEach(s=>s.classList.remove('active'));S.textColor=inp.value;applySettings();}
+function setHashColor(el){document.querySelectorAll('#hashSwatches .swatch').forEach(s=>s.classList.remove('active'));el.classList.add('active');S.hashColor=el.dataset.color;applySettings();}
+function setHashCustom(inp){document.querySelectorAll('#hashSwatches .swatch').forEach(s=>s.classList.remove('active'));S.hashColor=inp.value;applySettings();}
+function setCountColor(el){document.querySelectorAll('#countSwatches .swatch').forEach(s=>s.classList.remove('active'));el.classList.add('active');S.countColor=el.dataset.color;applySettings();}
+function setCountCustom(inp){document.querySelectorAll('#countSwatches .swatch').forEach(s=>s.classList.remove('active'));S.countColor=inp.value;applySettings();}
+function setIconColor(el){document.querySelectorAll('#iconColorSwatches .swatch').forEach(s=>s.classList.remove('active'));el.classList.add('active');S.iconColor=el.dataset.color;rebuildAllSlotRows();buildNavTabsEditor();renderFrame();}
+function setIconColorCustom(inp){document.querySelectorAll('#iconColorSwatches .swatch').forEach(s=>s.classList.remove('active'));S.iconColor=inp.value;rebuildAllSlotRows();buildNavTabsEditor();renderFrame();}
+function onFontSizeChange(inp){S.fontSize=parseFloat(inp.value);document.getElementById('fontSizeLabel').textContent=inp.value+'px';applySettings();}
+function onLineHChange(inp){S.lineH=parseFloat(inp.value);document.getElementById('lineHLabel').textContent=parseFloat(inp.value).toFixed(2);applySettings();}
+function onIconSizeChange(inp){S.iconSize=parseInt(inp.value);document.getElementById('iconSizeLabel').textContent=inp.value;applySettings();}
+function onIndentChange(inp){S.indent=parseInt(inp.value);document.getElementById('indentLabel').textContent=inp.value+'px';applySettings();}
+
+// ══════════════════════════════════════════════
+//  AVATAR
+// ══════════════════════════════════════════════
+function setAvatarPos(val, el){
+  S.avatarPos = val;
+  document.querySelectorAll('#avatarPosSel .seg-ctrl-opt').forEach(o=>o.classList.toggle('active',o.dataset.val===val));
+  renderFrame();
+}
+
+function renderAvatar(){
+  const row = document.getElementById('igAvatarRow');
+  if (!S.showAvatar) { row.style.display = 'none'; return; }
+
+  const frame = document.getElementById('igFrame');
+  const navEl = document.getElementById('igBottom');
+  const pos = S.avatarPos || 'auto';
+
+  if (pos === 'top') {
+    // Đặt trên cùng, trước tất cả
+    frame.insertBefore(row, frame.firstChild);
+  } else if (pos === 'bottom') {
+    // Đặt dưới cùng
+    frame.appendChild(row);
+  } else {
+    // Auto: kề nav bar (hành vi cũ)
+    if (S.navBarPos === 'top') {
+      if (navEl && navEl.parentNode === frame) {
+        frame.insertBefore(row, navEl.nextSibling);
+      } else {
+        frame.insertBefore(row, frame.children[1] || null);
+      }
+    } else {
+      if (navEl && navEl.parentNode === frame) {
+        frame.insertBefore(row, navEl);
+      } else {
+        frame.appendChild(row);
+      }
+    }
+  }
+
+  row.style.display = 'flex';
+
+  const sz = S.avatarSize;
+  const circle = document.getElementById('igAvatarCircle');
+  circle.style.width = sz + 'px';
+  circle.style.height = sz + 'px';
+
+  circle.innerHTML = '';
+  if (S.avatarDataUrl) {
+    const img = document.createElement('img');
+    img.src = S.avatarDataUrl;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:50%';
+    circle.appendChild(img);
+  } else {
+    const name = S.avatarName || '?';
+    const letter = name.trim()[0]?.toUpperCase() || '?';
+    const span = document.createElement('div');
+    span.className = 'ig-avatar-initials';
+    span.style.fontSize = Math.round(sz * 0.45) + 'px';
+    span.textContent = letter;
+    circle.appendChild(span);
+  }
+
+  circle.style.borderColor = S.bgColor === '#000000' ? '#444' : '#dbdbdb';
+
+  const nameEl = document.getElementById('igAvatarName');
+  nameEl.textContent = S.avatarName || '';
+  nameEl.style.color = S.textColor;
+  nameEl.style.fontSize = Math.max(10, Math.round(sz * 0.38)) + 'px';
+}
+
+function onAvatarSizeChange(inp){
+  S.avatarSize = parseInt(inp.value);
+  document.getElementById('avatarSizeLabel').textContent = inp.value;
+  renderFrame();
+}
+
+function clearAvatar(){
+  S.avatarDataUrl = null;
+  document.getElementById('avatarUploadBox').innerHTML = '<span class="avatar-upload-placeholder">👤</span>';
+  renderFrame();
+}
+
+document.getElementById('avatarFileInput').addEventListener('change', async function(){
+  const file = this.files[0]; if (!file) return; this.value = '';
+  const url = await fileToDataUrl(file);
+  S.avatarDataUrl = url;
+  const box = document.getElementById('avatarUploadBox');
+  box.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"/>`;
+  renderFrame();
+});
+
+// ══════════════════════════════════════════════
+//  PRESET
+// ══════════════════════════════════════════════
+function getPresetData(){
+  return{
+    bgColor:S.bgColor,textColor:S.textColor,hashColor:S.hashColor,
+    iconColor:S.iconColor,countColor:S.countColor,
+    fontSize:S.fontSize,lineH:S.lineH,textAlign:S.textAlign,indent:S.indent,iconSize:S.iconSize,
+    iconBarPos:S.iconBarPos,showLikesRow:S.showLikesRow,
+    leftSlots:S.leftSlots,rightSlots:S.rightSlots,
+    navTabs:S.navTabs,navStyle:S.navStyle,navBarPos:S.navBarPos,
+    customIconLib:S.customIconLib,
+    likes:document.getElementById('cfgLikes').value,
+    hashtags:document.getElementById('cfgHash').value,
+    showAvatar:S.showAvatar,
+    avatarName:S.avatarName,
+    avatarSize:S.avatarSize,
+    avatarDataUrl:S.avatarDataUrl||null,
+    avatarPos:S.avatarPos||'auto',
+  };
+}
+function applyPresetData(p){
+  const keys=['bgColor','textColor','hashColor','iconColor','countColor','fontSize','lineH','textAlign','indent','iconSize','iconBarPos','showLikesRow','leftSlots','rightSlots','navTabs','navStyle','customIconLib','navBarPos','showAvatar','avatarName','avatarSize','avatarDataUrl','avatarPos'];
+  keys.forEach(k=>{if(p[k]!==undefined)S[k]=p[k];});
+  if(p.likes!==undefined) document.getElementById('cfgLikes').value=p.likes;
+  if(p.hashtags!==undefined) document.getElementById('cfgHash').value=p.hashtags;
+  // Restore avatar UI
+  const showAv=!!S.showAvatar;
+  document.getElementById('showAvatar').checked=showAv;
+  document.getElementById('avatarCfg').style.display=showAv?'block':'none';
+  if(p.avatarName!==undefined) document.getElementById('avatarName').value=S.avatarName||'';
+  if(p.avatarSize!==undefined){
+    document.getElementById('avatarSizeRange').value=S.avatarSize;
+    document.getElementById('avatarSizeLabel').textContent=S.avatarSize;
+  }
+  // avatarPos selector is handled by syncControlsFromState below
+  const box=document.getElementById('avatarUploadBox');
+  if(S.avatarDataUrl){
+    box.innerHTML='<img src="'+S.avatarDataUrl+'" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"/>';
+  } else {
+    box.innerHTML='<span class="avatar-upload-placeholder">👤</span>';
+  }
+  syncControlsFromState();rebuildAllSlotRows();buildNavTabsEditor();
+  document.getElementById('showLikesRow').checked=S.showLikesRow;
+  document.querySelectorAll('#iconBarPosSel .seg-ctrl-opt').forEach(o=>o.classList.toggle('active',o.dataset.val===S.iconBarPos));
+  document.getElementById('likesRowCfg').style.display=S.iconBarPos==='top'?'block':'none';
+  document.querySelectorAll('#navBarPosSel .seg-ctrl-opt').forEach(o=>o.classList.toggle('active',o.dataset.val===S.navBarPos));
+  renderFrame();
+}
+function syncControlsFromState(){
+  document.getElementById('fontSizeRange').value=S.fontSize;
+  document.getElementById('fontSizeLabel').textContent=S.fontSize+'px';
+  document.getElementById('lineHRange').value=S.lineH;
+  document.getElementById('lineHLabel').textContent=parseFloat(S.lineH).toFixed(2);
+  document.getElementById('indentRange').value=S.indent;
+  document.getElementById('indentLabel').textContent=S.indent+'px';
+  document.getElementById('iconSizeRange').value=S.iconSize;
+  document.getElementById('iconSizeLabel').textContent=S.iconSize;
+  document.getElementById('textAlign').value=S.textAlign;
+  document.getElementById('navStyle').value=S.navStyle;
+  // Sync avatarPos selector
+  const avPos=S.avatarPos||'auto';
+  document.querySelectorAll('#avatarPosSel .seg-ctrl-opt').forEach(o=>o.classList.toggle('active',o.dataset.val===avPos));
+  // Sync avatarSize slider
+  if(S.avatarSize){
+    document.getElementById('avatarSizeRange').value=S.avatarSize;
+    document.getElementById('avatarSizeLabel').textContent=S.avatarSize;
+  }
+}
+function openSavePreset(){openModal('modalSavePreset');document.getElementById('presetNameInp').focus();}
+function confirmSavePreset(){
+  const name=document.getElementById('presetNameInp').value.trim();
+  if(!name){showToast('Nhập tên preset','err');return;}
+  S.presets.push({id:'p_'+Date.now(),name,data:getPresetData()});
+  savePresetsToStorage();renderPresetList();
+  closeModal('modalSavePreset');document.getElementById('presetNameInp').value='';
+  showToast('✓ Đã lưu preset','ok');
+}
+function applyPreset(id){const p=S.presets.find(x=>x.id===id);if(p){applyPresetData(p.data);showToast(`✓ ${p.name}`,'ok');}}
+function updatePreset(id){
+  const p=S.presets.find(x=>x.id===id);
+  if(!p)return;
+  p.data=getPresetData();
+  savePresetsToStorage();
+  showToast(`✓ Đã cập nhật "${p.name}"`,'ok');
+}
+function deletePreset(id){S.presets=S.presets.filter(x=>x.id!==id);savePresetsToStorage();renderPresetList();}
+function renderPresetList(){
+  const el=document.getElementById('presetList');
+  if(!S.presets.length){el.innerHTML=`<div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);padding:5px 0">Chưa có preset</div>`;return;}
+  el.innerHTML='';
+  S.presets.forEach(p=>{
+    const row=document.createElement('div');row.className='preset-item';
+    row.innerHTML=`<span class="preset-name">${escHtml(p.name)}</span>`;
+    const ab=document.createElement('button');ab.className='btn btn-p p-apply';ab.textContent='Dùng';
+    ab.addEventListener('click',()=>applyPreset(p.id));
+    const ub=document.createElement('button');ub.className='p-upd';ub.textContent='↑';ub.title='Cập nhật preset với settings hiện tại';
+    ub.addEventListener('click',()=>updatePreset(p.id));
+    const db=document.createElement('button');db.className='p-del';db.textContent='×';
+    db.addEventListener('click',()=>deletePreset(p.id));
+    row.appendChild(ab);row.appendChild(ub);row.appendChild(db);el.appendChild(row);
+  });
+}
+function savePresetsToStorage(){try{localStorage.setItem('igps3_presets',JSON.stringify(S.presets));}catch(e){}}
+function loadPresetsFromStorage(){try{const d=localStorage.getItem('igps3_presets');if(d)S.presets=JSON.parse(d);}catch(e){}}
+function exportPresets(){
+  if(!S.presets.length){showToast('Chưa có preset.');return;}
+  const blob=new Blob([JSON.stringify(S.presets,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='ig_presets_v3.json';a.click();
+  URL.revokeObjectURL(url);showToast('✓ Đã xuất','ok');
+}
+function importPreset(){
+  const inp=document.getElementById('presetImportInput');
+  inp.onchange=async()=>{
+    const file=inp.files[0];if(!file)return;inp.value='';
+    try{
+      const arr=JSON.parse(await file.text());
+      const list=Array.isArray(arr)?arr:[arr];
+      let n=0;
+      list.forEach(p=>{if(p.name&&p.data){S.presets.push({id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2),name:p.name,data:p.data});n++;}});
+      savePresetsToStorage();renderPresetList();showToast(`✓ Import ${n} preset`,'ok');
+    }catch(e){showToast('File không hợp lệ','err');}
+  };
+  inp.click();
+}
+
+// ══════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(type?' '+type:'');
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);
+}
+function openModal(id){document.getElementById(id).classList.remove('hidden');}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+function downloadTxt(){
+  if(!S.segments.length)return;
+  const blob=new Blob([S.segments.join('\n\n')],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='output.txt';a.click();URL.revokeObjectURL(url);
+}
+
+function getFirstSentence(paragraph){
+  const words=paragraph.split(/\s+/).filter(Boolean);
+  for(let i=0;i<words.length;i++){
+    if(isSentEnd(words,i)){
+      return words.slice(0,i+1).join(' ').trim();
+    }
+  }
+  return paragraph.trim();
+}
+
+function downloadFirstSentences(){
+  if(!S.segments.length){showToast('Chưa có đoạn nào.');return;}
+  const lines=S.segments.map(seg=>getFirstSentence(seg));
+  const content=lines.join('\n');
+  const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='cau_dau_moi_doan.txt';a.click();
+  URL.revokeObjectURL(url);
+  showToast(`✓ Đã xuất ${lines.length} câu đầu`,'ok');
+}
+
+function getLastSentence(paragraph){
+  const words=paragraph.split(/\s+/).filter(Boolean);
+  const sentEnds=[];
+  for(let i=0;i<words.length;i++){
+    if(isSentEnd(words,i)) sentEnds.push(i);
+  }
+  if(!sentEnds.length) return paragraph.trim();
+  const lastBoundary=sentEnds[sentEnds.length-1];
+  const prevBoundary=sentEnds.length>=2?sentEnds[sentEnds.length-2]:-1;
+  const sent=words.slice(prevBoundary+1, lastBoundary+1).join(' ').trim();
+  const tail=words.slice(lastBoundary+1).join(' ').trim();
+  return tail ? sent+' '+tail : sent;
+}
+
+function downloadLastSentences(){
+  if(!S.segments.length){showToast('Chưa có đoạn nào.');return;}
+  const lines=S.segments.map(seg=>getLastSentence(seg));
+  const content=lines.join('\n');
+  const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='cau_cuoi_moi_doan.txt';a.click();
+  URL.revokeObjectURL(url);
+  showToast(`✓ Đã xuất ${lines.length} câu cuối`,'ok');
+}
+
+function fileToDataUrl(file){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});
+}
+
+document.querySelectorAll('.modal-bg').forEach(bg=>{
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.add('hidden');});
+});
+document.getElementById('presetNameInp').addEventListener('keydown',e=>{if(e.key==='Enter')confirmSavePreset();});
+
+// ── INIT ──
+loadPresetsFromStorage();
+renderPresetList();
+rebuildAllSlotRows();
+buildNavTabsEditor();
+applySettings();
+initNLP(); // kick off NLP readiness check
+</script>
+</body>
+</html>
