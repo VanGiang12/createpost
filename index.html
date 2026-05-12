@@ -1093,7 +1093,7 @@ function processText(){
   const nVal=parseInt(document.getElementById('nWords').value,10);
   if(!raw.trim()){showToast('Vui lòng dán văn bản.');return;}
   if(!nVal||nVal<1){showToast('N phải ≥ 1.');return;}
-  let text=raw.replace(/\[music\]/gi, '').trim();
+  let text=raw.replace(/\[music\]/gi, '').replace(/<<|>>/g, '').trim();
   const words=text.split(/\s+/).filter(Boolean);
   if(!words.length)return;
   const segs=[];let start=0;
