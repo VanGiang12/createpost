@@ -282,6 +282,17 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-to
 
 /* Diff highlight for punctuation preview */
 .punct-diff-added{color:var(--accent);font-weight:600;}
+
+/* File loader button */
+.txt-file-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  padding:5px 10px;font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  color:var(--muted);cursor:pointer;transition:border-color .18s,color .18s,background .18s;
+  white-space:nowrap;flex-shrink:0;
+}
+.txt-file-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,241,53,.06)}
+.txt-file-btn.loaded{border-color:rgba(200,241,53,.5);color:var(--accent);background:rgba(200,241,53,.08)}
 </style>
 </head>
 <body>
@@ -299,7 +310,17 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-to
 <div>
   <div class="card">
     <div class="ct">// 01 — văn bản</div>
-    <textarea id="inputText" rows="7" placeholder="Dán văn bản vào đây..."></textarea>
+
+    <!-- Input header: label + file picker -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+      <span style="font-size:.6rem;font-family:'JetBrains Mono',monospace;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)">Văn bản đầu vào</span>
+      <label class="txt-file-btn" id="txtFileLabelEl" title="Chọn file .txt từ máy">
+        📂 <span id="txtFileLabelText">Chọn file .txt</span>
+        <input type="file" id="txtFileInput" accept=".txt,text/plain" style="display:none"/>
+      </label>
+    </div>
+
+    <textarea id="inputText" rows="7" placeholder="Dán văn bản vào đây hoặc chọn file .txt ↗"></textarea>
 
     <!-- NLP Punctuation toggle -->
     <div class="toggle-row" style="margin-top:8px">
@@ -748,13 +769,9 @@ const SENT_STARTERS = new Set([
 ]);
 
 // ── Patterns that signal a SENTENCE BREAK before a word ──
-// These are higher-confidence triggers checked word-by-word
 const BREAK_BEFORE = [
-  // Spoken discourse pivots
   /^(that('s| is| was)|this is|it was|it('s| is)|there was|there were|there('s| is))\b/i,
-  // Personal pronouns starting narrative shift
   /^(he |she |they |we |i |you )(said|told|asked|answered|replied|thought|felt|knew|saw|heard|decided|turned|walked|ran|looked|smiled|laughed|cried|called|left|came|went|took|made|found|tried|wanted|needed|had to|was |were |would|could)\b/i,
-  // Quoted speech introducer
   /^(said|asked|replied|told|explained|added|continued|whispered|shouted|cried|exclaimed|insisted|demanded|warned|admitted|confessed|announced|declared|responded|noted|observed)\b/i,
 ];
 
@@ -767,13 +784,11 @@ const EXCLAIM_STARTERS = /^(wow|oh|ah|hey|wait|stop|no|yes|great|amazing|incredi
 const EXCLAIM_ENDINGS  = /\b(indeed|absolutely|definitely|certainly|of course|obviously|no doubt|at all|for sure)\s*$/i;
 
 // ── Comma rules ──
-// After introductory adverbial phrases
 const INTRO_ADVERB = /^(however|nevertheless|therefore|furthermore|moreover|additionally|consequently|subsequently|meanwhile|afterward|afterwards|initially|ultimately|fortunately|unfortunately|surprisingly|basically|honestly|overall|instead|otherwise|in fact|in addition|on the other hand|as a result|for example|for instance|in other words|at the same time|at first|at last|in turn|by the way|of course|in short|to be honest|needless to say|that said|that being said)\s+/i;
 
 // ── Helpers ──
 function capitalizeFirst(str) {
   if (!str) return str;
-  // Handle quoted openings like "she said, 'hello..."
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
@@ -784,45 +799,26 @@ function stripTrailingPunct(s) {
 function detectEnding(sentence, mode) {
   const trimmed = sentence.trim();
   const lower   = trimmed.toLowerCase();
-
-  // Question?
   if (Q_STARTERS.test(trimmed)) return '?';
   if (mode !== 'conservative' && Q_TAG_ENDINGS.test(lower)) return '?';
-
-  // Exclamation!
   if (mode === 'full') {
     if (EXCLAIM_STARTERS.test(trimmed)) return '!';
     if (EXCLAIM_ENDINGS.test(lower))    return '!';
   }
-
   return '.';
 }
 
 function addCommas(s) {
-  // Introductory adverb comma: "However she left" → "However, she left"
   s = s.replace(INTRO_ADVERB, (m, adv) => adv + ', ');
-
-  // Coordinating conjunctions: only but/yet/so/nor (safer than and/for)
   s = s.replace(/(?<![,;])\s+(but|yet|so|nor)\s+(?=[a-z])/gi, (m, conj) => `, ${conj} `);
-
-  // Subordinating conjunctions (clear clause boundaries)
   s = s.replace(/(?<![,;])\s+(because|although|though|while|whereas|unless|until|even though|even if)\s+/gi,
     (m, conj) => `, ${conj} `);
-
-  // Clean up artefacts
   s = s.replace(/,\s*,/g, ',').replace(/\s{2,}/g, ' ');
   return s;
 }
 
-// ══════════════════════════════════════════════
-//  SENTENCE SPLITTER — heart of the engine
-//  Works purely on token patterns, no existing
-//  punctuation needed (designed for transcripts)
-// ══════════════════════════════════════════════
 function splitIntoSentences(text) {
-  // 1. Normalise whitespace, keep existing sentence-ending punct as hints
   text = text.replace(/\s+/g, ' ').trim();
-
   const words = text.split(' ');
   const sentences = [];
   let current = [];
@@ -833,10 +829,8 @@ function splitIntoSentences(text) {
     const prev  = current.length > 0 ? current[current.length - 1] : '';
     const prevLower = prev.toLowerCase().replace(/[^a-z']/g, '');
 
-    // ── If word already ends with sentence-terminal punctuation ──
     if (/[.!?]$/.test(word) && !ABBREVS.has(lower.replace(/[.!?]+$/,''))) {
       current.push(word);
-      // Only split if next word starts with uppercase or is a strong starter
       const next = words[i + 1] || '';
       if (!next || /^[A-Z]/.test(next) || SENT_STARTERS.has(next.toLowerCase().replace(/[^a-z']/g,''))) {
         sentences.push(current.join(' '));
@@ -845,17 +839,12 @@ function splitIntoSentences(text) {
       continue;
     }
 
-    // ── Minimum sentence length guard (avoid 1-2 word fragments) ──
     const minLen = 8;
     if (current.length >= minLen) {
-
-      // Check if this word is a high-confidence sentence starter
       const isStrongStarter = BREAK_BEFORE.some(re => {
         const lookahead = words.slice(i, i + 4).join(' ');
         return re.test(lookahead);
       });
-
-      // Check if prev word ended the thought and this word starts a new one
       const prevEndedThought = /[,;]$/.test(prev) && SENT_STARTERS.has(lower);
       const freshClause      = SENT_STARTERS.has(lower) && current.length >= 12;
       const afterReportVerb  = SENT_STARTERS.has(lower) &&
@@ -867,7 +856,6 @@ function splitIntoSentences(text) {
         current = [];
       }
     }
-
     current.push(word);
   }
 
@@ -875,35 +863,22 @@ function splitIntoSentences(text) {
   return sentences.filter(s => s.trim().length > 0);
 }
 
-// ══════════════════════════════════════════════
-//  CORE PUNCTUATION ENGINE (public API)
-// ══════════════════════════════════════════════
 function addPunctuation(rawText, mode = 'smart') {
-  // 1. Pre-clean: strip stray lone dots/commas inside words
   let text = rawText
     .replace(/\s+/g, ' ')
-    .replace(/([a-zA-Z])\s*\.\s*([a-z])/g, '$1 $2')  // mid-word dots
+    .replace(/([a-zA-Z])\s*\.\s*([a-z])/g, '$1 $2')
     .trim();
 
-  // 2. Split into sentences using rule-based splitter
   const sentences = splitIntoSentences(text);
-
   if (!sentences.length) return capitalizeFirst(text) + '.';
 
-  // 3. Process each sentence
   const result = sentences.map(sent => {
     let s = stripTrailingPunct(sent).trim();
     if (!s) return '';
-
-    // Capitalize
     s = capitalizeFirst(s);
-
-    // Comma insertion in full/smart modes
     if (mode === 'full' || mode === 'smart') {
       s = addCommas(s);
     }
-
-    // Terminal punctuation
     const ending = detectEnding(s, mode);
     return s + ending;
   }).filter(Boolean);
@@ -911,11 +886,7 @@ function addPunctuation(rawText, mode = 'smart') {
   return result.join(' ');
 }
 
-// ══════════════════════════════════════════════
-//  DIFF — highlight what changed
-// ══════════════════════════════════════════════
 function buildDiff(before, after) {
-  // Simple token-level diff to show added punctuation in green
   const bWords = before.split(/\s+/);
   const aWords = after.split(/\s+/);
   const out = [];
@@ -928,7 +899,6 @@ function buildDiff(before, after) {
       bi++; ai++;
     } else if (aw.replace(/[.!?,]/g, '') === bw.replace(/[.!?,]/g, '') ||
                aw.toLowerCase().replace(/[.!?,]/g,'') === bw.toLowerCase().replace(/[.!?,]/g,'')) {
-      // Same word but punctuation/capitalization added
       out.push(`<span class="punct-diff-added">${escHtml(aw)}</span>`);
       bi++; ai++;
     } else {
@@ -939,9 +909,6 @@ function buildDiff(before, after) {
   return out.join(' ');
 }
 
-// ══════════════════════════════════════════════
-//  UI HANDLERS for NLP punctuation
-// ══════════════════════════════════════════════
 function onNoPunctChange() {
   const checked = document.getElementById('noPunctCheck').checked;
   document.getElementById('addPunctRow').style.display = checked ? 'block' : 'none';
@@ -962,7 +929,6 @@ function addPunctuationNLP() {
 
   const mode = document.getElementById('punctMode').value;
 
-  // Use setTimeout to not block UI
   setTimeout(() => {
     try {
       const result = addPunctuation(raw, mode);
@@ -993,7 +959,6 @@ function previewPunctDiff() {
   setTimeout(() => {
     const result = addPunctuation(raw, mode);
     const diffHtml = buildDiff(raw, result);
-    // Show first ~400 chars of diff
     const preview = diffHtml.length > 1200 ? diffHtml.slice(0, 1200) + '…' : diffHtml;
     box.innerHTML = `<div style="color:var(--muted);margin-bottom:4px;font-size:.58rem;letter-spacing:.1em">PREVIEW (màu vàng = thêm mới)</div>${preview}`;
     box.style.display = 'block';
@@ -1084,6 +1049,34 @@ function isSentEnd(words,i){
   if(!next)return true;
   return /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝ\u00C0-\u024F]/.test(next);
 }
+
+// ══════════════════════════════════════════════
+//  TXT FILE LOADER
+// ══════════════════════════════════════════════
+document.getElementById('txtFileInput').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('inputText').value = e.target.result;
+
+    // Update label
+    const labelEl = document.getElementById('txtFileLabelEl');
+    const labelText = document.getElementById('txtFileLabelText');
+    const shortName = file.name.length > 22 ? file.name.slice(0, 20) + '…' : file.name;
+    labelText.textContent = '✓ ' + shortName;
+    labelEl.classList.add('loaded');
+
+    const kb = (file.size / 1024).toFixed(1);
+    showToast(`✓ Đã tải: ${file.name} (${kb} KB)`, 'ok');
+  };
+  reader.onerror = function() {
+    showToast('Lỗi đọc file — thử lại.', 'err');
+  };
+  reader.readAsText(file, 'utf-8');
+  this.value = ''; // reset so same file can be re-selected
+});
 
 // ══════════════════════════════════════════════
 //  PROCESS TEXT
@@ -1662,13 +1655,10 @@ function renderAvatar(){
   const pos = S.avatarPos || 'auto';
 
   if (pos === 'top') {
-    // Đặt trên cùng, trước tất cả
     frame.insertBefore(row, frame.firstChild);
   } else if (pos === 'bottom') {
-    // Đặt dưới cùng
     frame.appendChild(row);
   } else {
-    // Auto: kề nav bar (hành vi cũ)
     if (S.navBarPos === 'top') {
       if (navEl && navEl.parentNode === frame) {
         frame.insertBefore(row, navEl.nextSibling);
@@ -1762,7 +1752,6 @@ function applyPresetData(p){
   keys.forEach(k=>{if(p[k]!==undefined)S[k]=p[k];});
   if(p.likes!==undefined) document.getElementById('cfgLikes').value=p.likes;
   if(p.hashtags!==undefined) document.getElementById('cfgHash').value=p.hashtags;
-  // Restore avatar UI
   const showAv=!!S.showAvatar;
   document.getElementById('showAvatar').checked=showAv;
   document.getElementById('avatarCfg').style.display=showAv?'block':'none';
@@ -1771,7 +1760,6 @@ function applyPresetData(p){
     document.getElementById('avatarSizeRange').value=S.avatarSize;
     document.getElementById('avatarSizeLabel').textContent=S.avatarSize;
   }
-  // avatarPos selector is handled by syncControlsFromState below
   const box=document.getElementById('avatarUploadBox');
   if(S.avatarDataUrl){
     box.innerHTML='<img src="'+S.avatarDataUrl+'" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"/>';
@@ -1796,10 +1784,8 @@ function syncControlsFromState(){
   document.getElementById('iconSizeLabel').textContent=S.iconSize;
   document.getElementById('textAlign').value=S.textAlign;
   document.getElementById('navStyle').value=S.navStyle;
-  // Sync avatarPos selector
   const avPos=S.avatarPos||'auto';
   document.querySelectorAll('#avatarPosSel .seg-ctrl-opt').forEach(o=>o.classList.toggle('active',o.dataset.val===avPos));
-  // Sync avatarSize slider
   if(S.avatarSize){
     document.getElementById('avatarSizeRange').value=S.avatarSize;
     document.getElementById('avatarSizeLabel').textContent=S.avatarSize;
@@ -1944,7 +1930,7 @@ renderPresetList();
 rebuildAllSlotRows();
 buildNavTabsEditor();
 applySettings();
-initNLP(); // kick off NLP readiness check
+initNLP();
 </script>
 </body>
 </html>
