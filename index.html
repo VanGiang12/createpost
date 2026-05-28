@@ -25,11 +25,44 @@ header h1{font-size:clamp(1.3rem,2.5vw,1.8rem);font-weight:800;letter-spacing:-.
 header h1 span{color:var(--accent)}
 header p{font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
 
-.master{display:grid;grid-template-columns:340px 1fr 410px;gap:16px;width:100%;max-width:1480px;align-items:start;}
-@media(max-width:1200px){.master{grid-template-columns:320px 1fr}}
-@media(max-width:760px){.master{grid-template-columns:1fr}}
+.master{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 390px;
+  grid-template-areas:
+    "segments segments"
+    "preview settings";
+  gap:12px;
+  width:100%;max-width:1480px;align-items:start;
+}
+.master>div:first-child{
+  grid-area:segments;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  align-items:stretch;
+  background:#08080a;
+  border:1px solid #20202a;
+  border-radius:8px;
+  padding:10px;
+  max-height:560px;
+  overflow:auto;
+}
+.master>div:first-child .card{height:auto;min-height:0}
+.master>div:first-child .card+.card{margin-top:0}
+.master>div:first-child .card.global-seg-card{display:none}
+.mid-panel{grid-area:preview}
+.settings-panel{grid-area:settings}
+@media(max-width:1200px){
+  .master{grid-template-columns:1fr;grid-template-areas:"segments" "preview" "settings"}
+  .master>div:first-child{grid-template-columns:1fr}
+  .settings-panel{position:static;max-height:none;overflow:visible;padding-right:0}
+}
+@media(max-width:760px){
+  .master{grid-template-columns:1fr}
+  .master>div:first-child{grid-template-columns:1fr}
+}
 
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;}
 .card+.card{margin-top:12px}
 .ct{font-size:.6rem;font-family:'JetBrains Mono',monospace;letter-spacing:.15em;
   text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
@@ -70,7 +103,7 @@ label.fl:first-child{margin-top:0}
   padding:3px 9px;font-family:'JetBrains Mono',monospace;font-size:.68rem;display:flex;align-items:center;gap:5px;}
 .chip .v{color:var(--accent);font-weight:700}
 
-.seg-scroll{max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:2px}
+.seg-scroll{max-height:300px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:5px;padding-right:2px}
 .seg-item{background:var(--bg);border:1px solid var(--border);border-radius:7px;
   padding:8px 11px;cursor:pointer;transition:border-color .18s,background .18s;animation:fadeUp .2s ease both;}
 .seg-item:hover{border-color:#333340;background:var(--surface2)}
@@ -85,6 +118,7 @@ label.fl:first-child{margin-top:0}
 .empty{text-align:center;padding:26px 10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.72rem;}
 
 .mid-panel{display:flex;flex-direction:column;gap:11px}
+.mid-panel>.card{min-height:590px}
 .preview-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:7px}
 .preview-header h2{font-size:.83rem;font-weight:700}
 .pager{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted)}
@@ -273,6 +307,40 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-to
 }
 .txt-file-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,241,53,.06)}
 .txt-file-btn.loaded{border-color:rgba(200,241,53,.5);color:var(--accent);background:rgba(200,241,53,.08)}
+.text-source-list{
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(240px,280px);
+  gap:8px;
+  margin-top:10px;
+  width:100%;
+  flex-basis:100%;
+  overflow-x:auto;
+  padding-bottom:4px;
+}
+.source-control-card{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.source-control-card .ct{width:100%;margin-bottom:0}
+.source-control-card .source-upload-row{display:flex;align-items:center;gap:8px;flex:1;min-width:220px}
+.source-control-card .nwords-box{width:190px;flex-shrink:0}
+.source-control-card .zip-tools{display:flex;gap:7px;align-items:end;flex-wrap:wrap}
+.source-control-card .zip-tools .btn{height:32px;font-size:.66rem}
+.text-source-card{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:9px;display:flex;flex-direction:column;min-height:250px}
+.text-source-card.active{border-color:rgba(200,241,53,.65);box-shadow:0 0 0 1px rgba(200,241,53,.08) inset}
+.text-source-head{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.text-source-name{flex:1;min-width:0;font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.text-source-meta{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--muted);white-space:nowrap}
+.text-source-card textarea{min-height:78px;max-height:160px;font-size:.68rem}
+.text-source-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:7px}
+.text-source-actions .btn{height:28px;font-size:.66rem;padding:0 9px}
+.text-source-actions .btn.compact{height:24px;font-size:.6rem;padding:0 7px}
+.source-pill{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--accent);background:rgba(200,241,53,.09);border:1px solid rgba(200,241,53,.2);border-radius:4px;padding:2px 6px}
+.source-stats{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.source-mini-segs{display:flex;flex-direction:column;gap:4px;margin-top:8px;overflow-y:auto;max-height:170px;padding-right:2px}
+.source-mini-seg{background:#09090c;border:1px solid #22222d;border-radius:5px;padding:5px 7px;cursor:pointer}
+.source-mini-seg:hover{border-color:rgba(200,241,53,.45)}
+.source-mini-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted)}
+.source-mini-num{color:var(--accent);background:rgba(200,241,53,.1);border-radius:3px;padding:1px 4px;font-weight:700}
+.source-mini-text{font-family:'JetBrains Mono',monospace;font-size:.62rem;line-height:1.35;color:#8a8a9a;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 </style>
 </head>
 <body>
@@ -288,17 +356,18 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-to
 
 <!-- ══ COL 1 ══ -->
 <div>
-  <div class="card">
+  <div class="card source-control-card">
     <div class="ct">// 01 — văn bản</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-      <span style="font-size:.6rem;font-family:'JetBrains Mono',monospace;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)">Văn bản đầu vào</span>
+    <div class="source-upload-row">
+      <span style="font-size:.6rem;font-family:'JetBrains Mono',monospace;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)">File nguồn</span>
       <label class="txt-file-btn" id="txtFileLabelEl" title="Chọn file .txt từ máy">
         📂 <span id="txtFileLabelText">Chọn file .txt</span>
-        <input type="file" id="txtFileInput" accept=".txt,text/plain" style="display:none"/>
+        <input type="file" id="txtFileInput" accept=".txt,text/plain" multiple style="display:none"/>
       </label>
     </div>
-    <textarea id="inputText" rows="7" placeholder="Dán văn bản vào đây hoặc chọn file .txt ↗"></textarea>
-    <div class="toggle-row" style="margin-top:8px">
+    <div class="text-source-list" id="textSourceList"></div>
+    <textarea id="inputText" rows="1" style="display:none"></textarea>
+    <div class="toggle-row" style="display:none;margin-top:8px">
       <span class="toggle-label">Văn bản <b style="color:var(--text)">không có dấu câu</b> — NLP tự thêm</span>
       <label class="toggle">
         <input type="checkbox" id="noPunctCheck" onchange="onNoPunctChange()"/>
@@ -324,13 +393,17 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-to
         font-family:'JetBrains Mono',monospace;font-size:.66rem;line-height:1.6;color:var(--muted)">
       </div>
     </div>
-    <div class="row">
+    <div class="row nwords-box">
       <div style="flex:1">
         <label class="fl">N từ tối thiểu / đoạn</label>
         <input type="number" id="nWords" value="50" min="1" max="9999"/>
       </div>
     </div>
-    <div class="row">
+    <div class="zip-tools">
+      <button class="btn btn-s" onclick="downloadAllFirstSentencesZip()">↓ ZIP câu đầu</button>
+      <button class="btn btn-s" onclick="downloadAllLastSentencesZip()">↓ ZIP câu cuối</button>
+    </div>
+    <div class="row" style="display:none">
       <button class="btn btn-p" style="flex:1" onclick="processText()">▶ Process</button>
       <button class="btn btn-s" id="dlTxtBtn" onclick="downloadTxt()" disabled>↓ .txt</button>
       <button class="btn btn-s" id="dlLastSentBtn" onclick="downloadLastSentences()" disabled title="Xuất câu cuối mỗi đoạn">↓ câu cuối</button>
@@ -343,7 +416,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-to
     </div>
   </div>
 
-  <div class="card">
+  <div class="card global-seg-card">
     <div class="ct">// 02 — đoạn <span style="font-size:.54rem">(click để load)</span></div>
     <div class="seg-scroll" id="segList">
       <div class="empty">✦<br/>Nhập văn bản và nhấn Process</div>
@@ -798,6 +871,7 @@ const DEF_LEFT=[{type:'builtin',id:'filled_heart',count:'31,230',showCount:true}
 const DEF_RIGHT=[{type:'builtin',id:'bookmark',count:'',showCount:false}];
 const S={
   segments:[],slides:[],currentIdx:0,
+  textSources:[],activeSourceId:'manual',
   bgColor:'#ffffff',textColor:'#000000',hashColor:'#00376b',
   iconColor:'#000000',countColor:'#000000',
   fontSize:12,lineH:1.55,textAlign:'justify',indent:0,iconSize:18,
@@ -960,33 +1034,140 @@ async function loadPresetsFromStorage() {
 // ══════════════════════════════════════════════
 //  TXT FILE LOADER
 // ══════════════════════════════════════════════
-document.getElementById('txtFileInput').addEventListener('change', function() {
-  const file = this.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('inputText').value = e.target.result;
-    const labelText = document.getElementById('txtFileLabelText');
-    const shortName = file.name.length > 22 ? file.name.slice(0,20)+'…' : file.name;
-    labelText.textContent = '✓ ' + shortName;
+document.getElementById('inputText').addEventListener('input',()=>{S.activeSourceId='manual';});
+document.getElementById('txtFileInput').addEventListener('change', async function() {
+  const files=Array.from(this.files||[]);
+  if(!files.length)return;
+  let loaded=0;
+  for(const file of files){
+    try{
+      const text=await readTxtFile(file);
+      S.textSources.push({id:'src_'+Date.now()+'_'+Math.random().toString(36).slice(2),name:file.name,size:file.size,text,segments:[],stats:null});
+      loaded++;
+    }catch(e){showToast(`Lỗi đọc file: ${file.name}`,'err');}
+  }
+  if(loaded){
+    S.activeSourceId=S.textSources[S.textSources.length-1].id;
+    renderTextSources();
+    const totalFiles=S.textSources.length;
+    document.getElementById('txtFileLabelText').textContent=totalFiles===1?'✓ 1 file':`✓ ${totalFiles} files`;
     document.getElementById('txtFileLabelEl').classList.add('loaded');
-    showToast(`✓ Đã tải: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, 'ok');
-  };
-  reader.onerror = () => showToast('Lỗi đọc file', 'err');
-  reader.readAsText(file, 'utf-8');
-  this.value = '';
+    showToast(`✓ Đã thêm ${loaded} file .txt`,'ok');
+  }
+  this.value='';
 });
+
+function readTxtFile(file){
+  return new Promise((res,rej)=>{
+    const reader=new FileReader();
+    reader.onload=e=>res(e.target.result||'');
+    reader.onerror=()=>rej(reader.error||new Error('read failed'));
+    reader.readAsText(file,'utf-8');
+  });
+}
+function renderTextSources(){
+  const list=document.getElementById('textSourceList');list.innerHTML='';
+  S.textSources.forEach((src,idx)=>{
+    const card=document.createElement('div');card.className='text-source-card'+(src.id===S.activeSourceId?' active':'');
+    const head=document.createElement('div');head.className='text-source-head';
+    const name=document.createElement('div');name.className='text-source-name';name.textContent=`#${idx+1} ${src.name}`;
+    const meta=document.createElement('div');meta.className='text-source-meta';meta.textContent=`${(src.size/1024).toFixed(1)} KB`;
+    head.appendChild(name);head.appendChild(meta);
+    const ta=document.createElement('textarea');ta.value=src.text;ta.rows=4;
+    ta.addEventListener('focus',()=>{S.activeSourceId=src.id;highlightTextSources();});
+    ta.addEventListener('input',()=>{src.text=ta.value;src.segments=[];src.stats=null;loadBtn.disabled=true;card.querySelectorAll('.source-pill').forEach(el=>el.remove());card.querySelectorAll('.compact').forEach(btn=>btn.disabled=true);card.querySelector('.source-mini-segs')?.remove();});
+    const actions=document.createElement('div');actions.className='text-source-actions';
+    const processBtn=document.createElement('button');processBtn.className='btn btn-p';processBtn.textContent='▶ Process';processBtn.addEventListener('click',()=>processText(src.id));
+    const loadBtn=document.createElement('button');loadBtn.className='btn btn-s';loadBtn.textContent='Load đoạn';loadBtn.disabled=!src.segments.length;loadBtn.addEventListener('click',()=>selectTextSource(src.id,true));
+    const delBtn=document.createElement('button');delBtn.className='btn btn-d';delBtn.textContent='×';delBtn.title='Xóa file này';delBtn.addEventListener('click',()=>removeTextSource(src.id));
+    actions.appendChild(processBtn);actions.appendChild(loadBtn);
+    actions.appendChild(delBtn);
+    card.appendChild(head);card.appendChild(ta);card.appendChild(actions);
+    if(src.stats)card.appendChild(renderSourceStats(src));
+    card.appendChild(renderSourceTools(src));
+    if(src.segments.length)card.appendChild(renderSourceMiniSegments(src));
+    list.appendChild(card);
+  });
+}
+function makeSourcePill(text){const el=document.createElement('span');el.className='source-pill';el.textContent=text;return el;}
+function renderSourceStats(src){
+  const stats=document.createElement('div');stats.className='source-stats';
+  stats.appendChild(makeSourcePill(`Đoạn: ${src.stats.segments}`));
+  stats.appendChild(makeSourcePill(`Từ: ${src.stats.words.toLocaleString()}`));
+  stats.appendChild(makeSourcePill(`TB: ${src.stats.avg}`));
+  return stats;
+}
+function renderSourceTools(src){
+  const tools=document.createElement('div');tools.className='text-source-actions';
+  const disabled=!src.segments.length;
+  const add=makeSourceToolButton('+ Thêm tất cả đoạn','btn btn-s compact',disabled,()=>addAllToPreview(src.id));
+  const txt=makeSourceToolButton('↓ .txt','btn btn-s compact',disabled,()=>downloadTxt(src.id));
+  const last=makeSourceToolButton('↓ câu cuối','btn btn-s compact',disabled,()=>downloadLastSentences(src.id));
+  const first=makeSourceToolButton('↓ câu đầu','btn btn-s compact',disabled,()=>downloadFirstSentences(src.id));
+  tools.appendChild(add);tools.appendChild(txt);tools.appendChild(last);tools.appendChild(first);
+  return tools;
+}
+function makeSourceToolButton(text,cls,disabled,onClick){
+  const btn=document.createElement('button');btn.className=cls;btn.textContent=text;btn.disabled=disabled;btn.addEventListener('click',onClick);return btn;
+}
+function renderSourceMiniSegments(src){
+  const wrap=document.createElement('div');wrap.className='source-mini-segs';
+  src.segments.slice(0,8).forEach((seg,idx)=>{
+    const wc=seg.split(/\s+/).filter(Boolean).length;
+    const item=document.createElement('div');item.className='source-mini-seg';
+    item.innerHTML=`<div class="source-mini-meta"><span class="source-mini-num">#${idx+1}</span><span>${wc}w</span></div><div class="source-mini-text">${escHtml(seg)}</div>`;
+    item.addEventListener('click',()=>{selectTextSource(src.id,true);loadSlide(seg,idx);});
+    wrap.appendChild(item);
+  });
+  if(src.segments.length>8){
+    const more=document.createElement('div');more.className='source-pill';more.style.alignSelf='center';more.textContent=`+ ${src.segments.length-8} đoạn nữa`;
+    wrap.appendChild(more);
+  }
+  return wrap;
+}
+function highlightTextSources(){document.querySelectorAll('.text-source-card').forEach((el,i)=>el.classList.toggle('active',S.textSources[i]&&S.textSources[i].id===S.activeSourceId));}
+function selectTextSource(id,loadSegments){
+  const src=S.textSources.find(x=>x.id===id);if(!src)return;
+  S.activeSourceId=id;document.getElementById('inputText').value=src.text;
+  if(loadSegments&&src.segments.length)applySegments(src.segments,src);
+  renderTextSources();
+}
+function getSourceById(id){return id?S.textSources.find(x=>x.id===id):null;}
+function getSegmentsForSource(id){
+  const src=getSourceById(id);
+  return src?src.segments:S.segments;
+}
+function removeTextSource(id){
+  S.textSources=S.textSources.filter(x=>x.id!==id);
+  if(S.activeSourceId===id)S.activeSourceId='manual';
+  renderTextSources();
+  if(!S.textSources.length){document.getElementById('txtFileLabelText').textContent='Chọn file .txt';document.getElementById('txtFileLabelEl').classList.remove('loaded');}
+}
 
 // ══════════════════════════════════════════════
 //  PROCESS TEXT
 // ══════════════════════════════════════════════
-function processText(){
-  const raw=document.getElementById('inputText').value;
+function processText(sourceId){
+  const src=sourceId?S.textSources.find(x=>x.id===sourceId):null;
+  const raw=src?src.text:document.getElementById('inputText').value;
   const nVal=parseInt(document.getElementById('nWords').value,10);
   if(!raw.trim()){showToast('Vui lòng dán văn bản.');return;}
   if(!nVal||nVal<1){showToast('N phải ≥ 1.');return;}
+  const segs=splitTextToSegments(raw,nVal);
+  if(src){
+    src.segments=segs;src.stats=getSegmentStats(segs);S.activeSourceId=src.id;
+    document.getElementById('inputText').value=src.text;
+  }else{
+    S.activeSourceId='manual';
+  }
+  applySegments(segs);
+  renderTextSources();
+  showToast(src?`✓ Đã process: ${src.name}`:'✓ Đã process văn bản','ok');
+}
+function splitTextToSegments(raw,nVal){
   let text=raw.replace(/\[music\]/gi,'').replace(/<<|>>/g,'').trim();
   const words=text.split(/\s+/).filter(Boolean);
-  if(!words.length)return;
+  if(!words.length)return[];
   const segs=[];let start=0;
   while(start<words.length){
     let end=start+nVal-1;
@@ -995,11 +1176,17 @@ function processText(){
     for(let i=end;i<words.length;i++){if(isSentEnd(words,i)){segs.push(words.slice(start,i+1).join(' '));start=i+1;found=true;break;}}
     if(!found){segs.push(words.slice(start).join(' '));break;}
   }
-  S.segments=segs;
+  return segs;
+}
+function getSegmentStats(segs){
   const totalW=segs.reduce((a,g)=>a+g.split(/\s+/).filter(Boolean).length,0);
+  return{segments:segs.length,words:totalW,avg:segs.length?Math.round(totalW/segs.length):0};
+}
+function applySegments(segs){
+  const stats=getSegmentStats(segs);S.segments=segs;
   document.getElementById('sS').textContent=segs.length;
-  document.getElementById('sW').textContent=totalW.toLocaleString();
-  document.getElementById('sA').textContent=Math.round(totalW/segs.length);
+  document.getElementById('sW').textContent=stats.words.toLocaleString();
+  document.getElementById('sA').textContent=stats.avg;
   document.getElementById('statsBar').style.display='flex';
   document.getElementById('dlTxtBtn').disabled=false;
   document.getElementById('dlLastSentBtn').disabled=false;
@@ -1027,12 +1214,15 @@ function loadSlide(text,segIdx){
   document.getElementById('dlOneBtn').disabled=false;document.getElementById('dlAllBtn').disabled=false;
   document.querySelectorAll('.seg-item').forEach((el,i)=>el.classList.toggle('active',i===segIdx));
 }
-function addAllToPreview(){
-  if(!S.segments.length)return;
-  S.slides=[...S.segments];S.currentIdx=0;
+function addAllToPreview(sourceId){
+  const src=getSourceById(sourceId);
+  const segs=src?src.segments:S.segments;
+  if(!segs.length)return;
+  if(src){S.activeSourceId=src.id;applySegments(segs);renderTextSources();}
+  S.slides=[...segs];S.currentIdx=0;
   renderFrame();updateBatchGrid();
   document.getElementById('dlOneBtn').disabled=false;document.getElementById('dlAllBtn').disabled=false;
-  showToast(`✓ Đã thêm ${S.segments.length} đoạn`,'ok');
+  showToast(`✓ Đã thêm ${segs.length} đoạn`,'ok');
 }
 function prevSlide(){if(!S.slides.length)return;S.currentIdx=(S.currentIdx-1+S.slides.length)%S.slides.length;renderFrame();highlightBatch();}
 function nextSlide(){if(!S.slides.length)return;S.currentIdx=(S.currentIdx+1)%S.slides.length;renderFrame();highlightBatch();}
@@ -1426,11 +1616,34 @@ function showToast(msg,type=''){
 }
 function openModal(id){document.getElementById(id).classList.remove('hidden');}
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
-function downloadTxt(){if(!S.segments.length)return;const blob=new Blob([S.segments.join('\n\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='output.txt';a.click();URL.revokeObjectURL(url);}
+function downloadTxt(sourceId){
+  const segs=getSegmentsForSource(sourceId);if(!segs.length)return;
+  const src=getSourceById(sourceId);
+  const blob=new Blob([segs.join('\n\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=src?`${safeFileBase(src.name)}_output.txt`:'output.txt';a.click();URL.revokeObjectURL(url);
+}
 function getFirstSentence(paragraph){const words=paragraph.split(/\s+/).filter(Boolean);for(let i=0;i<words.length;i++){if(isSentEnd(words,i))return words.slice(0,i+1).join(' ').trim();}return paragraph.trim();}
-function downloadFirstSentences(){if(!S.segments.length){showToast('Chưa có đoạn nào.');return;}const lines=S.segments.map(seg=>getFirstSentence(seg));const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='cau_dau_moi_doan.txt';a.click();URL.revokeObjectURL(url);showToast(`✓ Đã xuất ${lines.length} câu đầu`,'ok');}
+function downloadFirstSentences(sourceId){const segs=getSegmentsForSource(sourceId);if(!segs.length){showToast('Chưa có đoạn nào.');return;}const src=getSourceById(sourceId);const lines=segs.map(seg=>getFirstSentence(seg));const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=src?`${safeFileBase(src.name)}_cau_dau.txt`:'cau_dau_moi_doan.txt';a.click();URL.revokeObjectURL(url);showToast(`✓ Đã xuất ${lines.length} câu đầu`,'ok');}
 function getLastSentence(paragraph){const words=paragraph.split(/\s+/).filter(Boolean);const sentEnds=[];for(let i=0;i<words.length;i++){if(isSentEnd(words,i))sentEnds.push(i);}if(!sentEnds.length)return paragraph.trim();const lastBoundary=sentEnds[sentEnds.length-1];const prevBoundary=sentEnds.length>=2?sentEnds[sentEnds.length-2]:-1;const sent=words.slice(prevBoundary+1,lastBoundary+1).join(' ').trim();const tail=words.slice(lastBoundary+1).join(' ').trim();return tail?sent+' '+tail:sent;}
-function downloadLastSentences(){if(!S.segments.length){showToast('Chưa có đoạn nào.');return;}const lines=S.segments.map(seg=>getLastSentence(seg));const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='cau_cuoi_moi_doan.txt';a.click();URL.revokeObjectURL(url);showToast(`✓ Đã xuất ${lines.length} câu cuối`,'ok');}
+function downloadLastSentences(sourceId){const segs=getSegmentsForSource(sourceId);if(!segs.length){showToast('Chưa có đoạn nào.');return;}const src=getSourceById(sourceId);const lines=segs.map(seg=>getLastSentence(seg));const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=src?`${safeFileBase(src.name)}_cau_cuoi.txt`:'cau_cuoi_moi_doan.txt';a.click();URL.revokeObjectURL(url);showToast(`✓ Đã xuất ${lines.length} câu cuối`,'ok');}
+async function downloadAllFirstSentencesZip(){await downloadAllSentenceZip('first');}
+async function downloadAllLastSentencesZip(){await downloadAllSentenceZip('last');}
+async function downloadAllSentenceZip(kind){
+  const ready=S.textSources.filter(src=>src.segments&&src.segments.length);
+  if(!ready.length){showToast('Chưa có file nào đã Process.','err');return;}
+  const zip=new JSZip();
+  ready.forEach((src,idx)=>{
+    const lines=src.segments.map(seg=>kind==='first'?getFirstSentence(seg):getLastSentence(seg));
+    const base=safeFileBase(src.name)||`file_${idx+1}`;
+    const suffix=kind==='first'?'cau_dau':'cau_cuoi';
+    zip.file(`${String(idx+1).padStart(2,'0')}_${base}_${suffix}.txt`,lines.join('\n'));
+  });
+  const blob=await zip.generateAsync({type:'blob'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=kind==='first'?'tat_ca_cau_dau.zip':'tat_ca_cau_cuoi.zip';a.click();
+  URL.revokeObjectURL(url);
+  showToast(`✓ Đã xuất ${ready.length} file ${kind==='first'?'câu đầu':'câu cuối'} vào ZIP`,'ok');
+}
+function safeFileBase(name){return String(name||'output').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]+/g,'_').slice(0,80)||'output';}
 function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
 
 document.querySelectorAll('.modal-bg').forEach(bg=>{bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.add('hidden');});});
