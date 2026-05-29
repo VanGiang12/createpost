@@ -400,8 +400,10 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-to
       </div>
     </div>
     <div class="zip-tools">
+      <button class="btn btn-p" id="processAllSourcesBtn" onclick="processAllTextSources()">Process tất cả</button>
       <button class="btn btn-s" onclick="downloadAllFirstSentencesZip()">↓ ZIP câu đầu</button>
       <button class="btn btn-s" onclick="downloadAllLastSentencesZip()">↓ ZIP câu cuối</button>
+      <button class="btn btn-s" id="dlAllSourcesImagesBtn" onclick="downloadAllSourceImagesZip()">ZIP ảnh từng bài</button>
     </div>
     <div class="row" style="display:none">
       <button class="btn btn-p" style="flex:1" onclick="processText()">▶ Process</button>
@@ -1164,6 +1166,28 @@ function processText(sourceId){
   renderTextSources();
   showToast(src?`✓ Đã process: ${src.name}`:'✓ Đã process văn bản','ok');
 }
+function processAllTextSources(opts={}){
+  const nVal=parseInt(document.getElementById('nWords').value,10);
+  const sources=S.textSources.filter(src=>src.text&&src.text.trim());
+  if(!sources.length){if(!opts.silent)showToast('Chưa có file .txt nào.','err');return 0;}
+  if(!nVal||nVal<1){if(!opts.silent)showToast('N phải ≥ 1.','err');return 0;}
+  let totalSegs=0;
+  sources.forEach(src=>{
+    const segs=splitTextToSegments(src.text,nVal);
+    src.segments=segs;
+    src.stats=getSegmentStats(segs);
+    totalSegs+=segs.length;
+  });
+  const firstReady=sources.find(src=>src.segments.length);
+  if(firstReady){
+    S.activeSourceId=firstReady.id;
+    document.getElementById('inputText').value=firstReady.text;
+    applySegments(firstReady.segments);
+  }
+  renderTextSources();
+  if(!opts.silent)showToast(`✓ Đã process ${sources.length} file (${totalSegs} đoạn)`,'ok');
+  return sources.length;
+}
 function splitTextToSegments(raw,nVal){
   let text=raw.replace(/\[music\]/gi,'').replace(/<<|>>/g,'').trim();
   const words=text.split(/\s+/).filter(Boolean);
@@ -1437,6 +1461,50 @@ async function exportAll(){
   pBar.style.display='none';pFill.style.width='0%';pLabel.textContent='';
   dlBtn.disabled=false;dlBtn.textContent='⬇ Tất cả (ZIP)';
   showToast(`✓ Đã xuất ${S.slides.length} ảnh`,'ok');
+}
+async function downloadAllSourceImagesZip(){
+  const sources=S.textSources.filter(src=>src.text&&src.text.trim());
+  if(!sources.length){showToast('Chưa có file .txt nào.','err');return;}
+  if(sources.some(src=>!src.segments||!src.segments.length)){
+    const processed=processAllTextSources({silent:true});
+    if(!processed)return;
+  }
+  const ready=sources.filter(src=>src.segments&&src.segments.length);
+  if(!ready.length){showToast('Chưa có đoạn nào để xuất ảnh.','err');return;}
+
+  const btn=document.getElementById('dlAllSourcesImagesBtn');
+  const pBar=document.getElementById('progressBar');const pFill=document.getElementById('progressFill');const pLabel=document.getElementById('progressLabel');
+  const origSlides=[...S.slides];const origIdx=S.currentIdx;const origActive=S.activeSourceId;const origSegments=[...S.segments];
+  const zip=new JSZip();const total=ready.reduce((sum,src)=>sum+src.segments.length,0);
+  let done=0;
+  btn.disabled=true;btn.textContent='Đang xuất...';pBar.style.display='block';pFill.style.width='0%';
+  try{
+    for(let sIdx=0;sIdx<ready.length;sIdx++){
+      const src=ready[sIdx];const base=safeFileBase(src.name)||`bai_${sIdx+1}`;
+      const folder=zip.folder(`${String(sIdx+1).padStart(2,'0')}_${base}`);
+      S.activeSourceId=src.id;S.slides=[...src.segments];S.currentIdx=0;
+      for(let i=0;i<src.segments.length;i++){
+        S.currentIdx=i;renderFrame();await new Promise(r=>setTimeout(r,80));
+        pLabel.textContent=`Đang tạo ${base} ${i+1}/${src.segments.length}...`;
+        const canvas=await captureFrame();
+        if(canvas)folder.file(`${base}_${String(i+1).padStart(3,'0')}.png`,canvas.toDataURL('image/png').split(',')[1],{base64:true});
+        done++;pFill.style.width=`${Math.round(done/total*100)}%`;
+      }
+    }
+    pLabel.textContent='Nén ZIP...';
+    const blob=await zip.generateAsync({type:'blob'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='tat_ca_anh_tung_bai.zip';a.click();URL.revokeObjectURL(url);
+    showToast(`✓ Đã xuất ${total} ảnh từ ${ready.length} bài`,'ok');
+  }catch(e){
+    showToast('Lỗi xuất ảnh','err');
+  }finally{
+    S.slides=origSlides;S.currentIdx=Math.min(origIdx,Math.max(0,S.slides.length-1));S.activeSourceId=origActive;S.segments=origSegments;
+    if(origSegments.length)applySegments(origSegments);
+    if(S.slides.length){renderFrame();updateBatchGrid();}else clearFrame();
+    renderTextSources();
+    pBar.style.display='none';pFill.style.width='0%';pLabel.textContent='';
+    btn.disabled=false;btn.textContent='ZIP ảnh từng bài';
+  }
 }
 
 // ══════════════════════════════════════════════
