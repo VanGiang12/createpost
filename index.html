@@ -404,6 +404,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin-to
       <button class="btn btn-s" onclick="downloadAllFirstSentencesZip()">↓ ZIP câu đầu</button>
       <button class="btn btn-s" onclick="downloadAllLastSentencesZip()">↓ ZIP câu cuối</button>
       <button class="btn btn-s" id="dlAllSourcesImagesBtn" onclick="downloadAllSourceImagesZip()">ZIP ảnh từng bài</button>
+      <button class="btn btn-s" id="dlAllSourcesBundleBtn" onclick="downloadAllSourceBundleZip()">ZIP ảnh + câu</button>
     </div>
     <div class="row" style="display:none">
       <button class="btn btn-p" style="flex:1" onclick="processText()">▶ Process</button>
@@ -1463,6 +1464,11 @@ async function exportAll(){
   showToast(`✓ Đã xuất ${S.slides.length} ảnh`,'ok');
 }
 async function downloadAllSourceImagesZip(){
+  await downloadAllSourceBundleZip({imagesOnly:true});
+}
+
+async function downloadAllSourceBundleZip(options={}){
+  const imagesOnly=!!options.imagesOnly;
   const sources=S.textSources.filter(src=>src.text&&src.text.trim());
   if(!sources.length){showToast('Chưa có file .txt nào.','err');return;}
   if(sources.some(src=>!src.segments||!src.segments.length)){
@@ -1470,9 +1476,9 @@ async function downloadAllSourceImagesZip(){
     if(!processed)return;
   }
   const ready=sources.filter(src=>src.segments&&src.segments.length);
-  if(!ready.length){showToast('Chưa có đoạn nào để xuất ảnh.','err');return;}
+  if(!ready.length){showToast('Chưa có đoạn nào để xuất.','err');return;}
 
-  const btn=document.getElementById('dlAllSourcesImagesBtn');
+  const btn=document.getElementById(imagesOnly?'dlAllSourcesImagesBtn':'dlAllSourcesBundleBtn');
   const pBar=document.getElementById('progressBar');const pFill=document.getElementById('progressFill');const pLabel=document.getElementById('progressLabel');
   const origSlides=[...S.slides];const origIdx=S.currentIdx;const origActive=S.activeSourceId;const origSegments=[...S.segments];
   const zip=new JSZip();const total=ready.reduce((sum,src)=>sum+src.segments.length,0);
@@ -1480,30 +1486,35 @@ async function downloadAllSourceImagesZip(){
   btn.disabled=true;btn.textContent='Đang xuất...';pBar.style.display='block';pFill.style.width='0%';
   try{
     for(let sIdx=0;sIdx<ready.length;sIdx++){
-      const src=ready[sIdx];const base=safeFileBase(src.name)||`bai_${sIdx+1}`;
-      const folder=zip.folder(`${String(sIdx+1).padStart(2,'0')}_${base}`);
+      const src=ready[sIdx];const folderName=getSourceFolderName(src.name)||`bai_${sIdx+1}`;
+      const folder=zip.folder(folderName);
+      const imageFolder=folder.folder('ảnh');
+      if(!imagesOnly){
+        folder.file('cau_dau_moi_doan.txt',src.segments.map(seg=>getFirstSentence(seg)).join('\n'));
+        folder.file('cau_cuoi_moi_doan.txt',src.segments.map(seg=>getLastSentence(seg)).join('\n'));
+      }
       S.activeSourceId=src.id;S.slides=[...src.segments];S.currentIdx=0;
       for(let i=0;i<src.segments.length;i++){
         S.currentIdx=i;renderFrame();await new Promise(r=>setTimeout(r,80));
-        pLabel.textContent=`Đang tạo ${base} ${i+1}/${src.segments.length}...`;
+        pLabel.textContent=`Đang tạo ${folderName} ${i+1}/${src.segments.length}...`;
         const canvas=await captureFrame();
-        if(canvas)folder.file(`${base}_${String(i+1).padStart(3,'0')}.png`,canvas.toDataURL('image/png').split(',')[1],{base64:true});
+        if(canvas)imageFolder.file(`${folderName}_${String(i+1).padStart(3,'0')}.png`,canvas.toDataURL('image/png').split(',')[1],{base64:true});
         done++;pFill.style.width=`${Math.round(done/total*100)}%`;
       }
     }
     pLabel.textContent='Nén ZIP...';
     const blob=await zip.generateAsync({type:'blob'});const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download='tat_ca_anh_tung_bai.zip';a.click();URL.revokeObjectURL(url);
-    showToast(`✓ Đã xuất ${total} ảnh từ ${ready.length} bài`,'ok');
+    const a=document.createElement('a');a.href=url;a.download=imagesOnly?'tat_ca_anh_tung_bai.zip':'tat_ca_anh_va_cau_tung_bai.zip';a.click();URL.revokeObjectURL(url);
+    showToast(imagesOnly?`✓ Đã xuất ${total} ảnh từ ${ready.length} bài`:`✓ Đã xuất ảnh + câu cho ${ready.length} bài`,'ok');
   }catch(e){
-    showToast('Lỗi xuất ảnh','err');
+    showToast('Lỗi xuất ZIP','err');
   }finally{
     S.slides=origSlides;S.currentIdx=Math.min(origIdx,Math.max(0,S.slides.length-1));S.activeSourceId=origActive;S.segments=origSegments;
     if(origSegments.length)applySegments(origSegments);
     if(S.slides.length){renderFrame();updateBatchGrid();}else clearFrame();
     renderTextSources();
     pBar.style.display='none';pFill.style.width='0%';pLabel.textContent='';
-    btn.disabled=false;btn.textContent='ZIP ảnh từng bài';
+    btn.disabled=false;btn.textContent=imagesOnly?'ZIP ảnh từng bài':'ZIP ảnh + câu';
   }
 }
 
@@ -1712,6 +1723,13 @@ async function downloadAllSentenceZip(kind){
   showToast(`✓ Đã xuất ${ready.length} file ${kind==='first'?'câu đầu':'câu cuối'} vào ZIP`,'ok');
 }
 function safeFileBase(name){return String(name||'output').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]+/g,'_').slice(0,80)||'output';}
+function getSourceFolderName(name){
+  const base=safeFileBase(name);
+  const pair=base.match(/^(\d+)[_\-\s.]+(\d+)\b/);
+  if(pair)return pair[2];
+  const first=base.match(/^(\d+)\b/);
+  return first?first[1]:base;
+}
 function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
 
 document.querySelectorAll('.modal-bg').forEach(bg=>{bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.add('hidden');});});
